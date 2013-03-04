@@ -3,7 +3,7 @@ module.exports = (grunt) ->
     pkg: grunt.file.readJSON 'package.json'
     meta:
       src:   'lib/**/*.js'
-      specs: 'spec/**/*.spec.coffee'
+      specs: 'spec/**/*.spec.js'
     watch:
       test:
         files: ['<%= meta.src %>','<%= meta.specs %>']
