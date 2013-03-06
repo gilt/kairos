@@ -32,11 +32,20 @@ module.exports = (grunt) ->
           vendor: ['node_modules/underscore/underscore.js']
     clean:
       build: ['dist']
+    concat:
+      options:
+        separator: '\n\n'
+      build:
+        src: [
+          'lib/kairos_frame.js'
+          'lib/kairos_scheduler.js'
+        ]
+        dest: 'dist/<%= pkg.name %>.js'
     uglify:
       options:
         banner: '/*! <%= pkg.name %> v<%= pkg.version %> <%= grunt.template.today("yyyy-mm-dd") %> */\n'
       build:
-        src:  'lib/<%= pkg.name %>.js'
+        src:  'dist/<%= pkg.name %>.js'
         dest: 'dist/<%= pkg.name %>.min.js'
     release:
       options:
@@ -49,6 +58,7 @@ module.exports = (grunt) ->
         npm:      false  # publish the new version to npm.
 
   grunt.loadNpmTasks 'grunt-contrib-clean'
+  grunt.loadNpmTasks 'grunt-contrib-concat'
   grunt.loadNpmTasks 'grunt-contrib-jasmine'
   grunt.loadNpmTasks 'grunt-contrib-jshint'
   grunt.loadNpmTasks 'grunt-contrib-uglify'
@@ -56,5 +66,5 @@ module.exports = (grunt) ->
   grunt.loadNpmTasks 'grunt-release'
 
   grunt.registerTask 'default', ['watch']
-  grunt.registerTask 'build', ['clean:build', 'uglify']
+  grunt.registerTask 'build', ['clean:build', 'concat', 'uglify']
   grunt.registerTask 'test', ['jshint', 'jasmine']
