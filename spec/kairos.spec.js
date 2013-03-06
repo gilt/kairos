@@ -375,68 +375,7 @@ describe("Kairos", function () {
         expect(received).toBe(true);
       });
 
-      it("should publish once per tick", function () {
-        var
-          kairos = new KairosScheduler({
-            times: {
-              "test": (new Date()).getTime() + 60000
-            },
-            frames: [{
-              begin: {
-                at: 0
-              },
-              relatedTo: "test",
-              interval: 1000
-            }]
-          }),
-          received = false,
-          durationReceived = null;
-
-        kairos.subscribe("frameTicked", function (frame, duration) {
-          received = true;
-          durationReceived = duration;
-        });
-
-        waitsFor(function () {
-          return received;
-        });
-
-        runs(function () {
-          expect(Math.floor(durationReceived / 1000)).toBe(59);
-        });
-      });
-
-      it("should send a tick duration of 0 if no relatedTo field is set", function () {
-        var
-          kairos = new KairosScheduler({
-            times: {
-              "test": (new Date()).getTime() + 60000
-            },
-            frames: [{
-              begin: {
-                at: 0
-              },
-              interval: 1000
-            }]
-          }),
-          received = false,
-          durationReceived = null;
-
-        kairos.subscribe("frameTicked", function (frame, duration) {
-          received = true;
-          durationReceived = duration;
-        });
-
-        waitsFor(function () {
-          return received;
-        });
-
-        runs(function () {
-          expect(durationReceived).toBe(0);
-        });
-      });
-
-      it("should publish when a frame changes", function () {
+      it("should publish when a frame starts", function () {
         var
           kairos = new KairosScheduler({
             times: {
@@ -471,7 +410,7 @@ describe("Kairos", function () {
         });
       });
 
-      it("should publish a frame specific event when a frame changes", function () {
+      it("should publish a named event when a named frame starts", function () {
         var
           kairos = new KairosScheduler({
             times: {
@@ -494,6 +433,162 @@ describe("Kairos", function () {
           dataReceived = null;
 
         kairos.subscribe("frameStarted/test", function (data, duration) {
+          received = true;
+          dataReceived = data;
+        });
+
+        waitsFor(function () {
+          return received;
+        });
+
+        runs(function () {
+          expect(dataReceived).toEqual({});
+        });
+      });
+
+      it("should publish when a frame ticks", function () {
+        var
+          kairos = new KairosScheduler({
+            times: {
+              "test": (new Date()).getTime() + 60000
+            },
+            frames: [{
+              begin: {
+                at: 0
+              },
+              relatedTo: "test",
+              interval: 1000
+            }]
+          }),
+          received = false,
+          durationReceived = null;
+
+        kairos.subscribe("frameTicked", function (frame, duration) {
+          received = true;
+          durationReceived = duration;
+        });
+
+        waitsFor(function () {
+          return received;
+        });
+
+        runs(function () {
+          expect(Math.floor(durationReceived / 1000)).toBe(59);
+        });
+      });
+
+      it("should publish a named event when a named frame ticks", function () {
+        var
+          kairos = new KairosScheduler({
+            times: {
+              "test": (new Date()).getTime() + 60000
+            },
+            frames: [{
+              begin: {
+                at: 0
+              },
+              relatedTo: "test",
+              interval: 1000,
+              frameName: "test"
+            }]
+          }),
+          received = false,
+          durationReceived = null;
+
+        kairos.subscribe("frameTicked/test", function (frame, duration) {
+          received = true;
+          durationReceived = duration;
+        });
+
+        waitsFor(function () {
+          return received;
+        });
+
+        runs(function () {
+          expect(Math.floor(durationReceived / 1000)).toBe(59);
+        });
+      });
+
+      it("should send a tick duration of 0 if no 'relatedTo' field is set", function () {
+        var
+          kairos = new KairosScheduler({
+            times: {
+              "test": (new Date()).getTime() + 60000
+            },
+            frames: [{
+              begin: {
+                at: 0
+              },
+              interval: 1000
+            }]
+          }),
+          received = false,
+          durationReceived = null;
+
+        kairos.subscribe("frameTicked", function (frame, duration) {
+          received = true;
+          durationReceived = duration;
+        });
+
+        waitsFor(function () {
+          return received;
+        });
+
+        runs(function () {
+          expect(durationReceived).toBe(0);
+        });
+      });
+
+      it("should publish when a frame ends", function () {
+        var
+          kairos = new KairosScheduler({
+            times: {
+              "now": (new Date())
+            },
+            frames: [{
+              end: {
+                starting: "1s",
+                after: "now"
+              },
+              data: {}
+            }]
+          }),
+          received = false,
+          dataReceived = null;
+
+        kairos.subscribe("frameEnded", function (data, duration) {
+          received = true;
+          dataReceived = data;
+        });
+
+        waitsFor(function () {
+          return received;
+        });
+
+        runs(function () {
+          expect(dataReceived).toEqual({});
+        });
+      });
+
+      it("should publish a named event when a named frame ends", function () {
+        var
+          kairos = new KairosScheduler({
+            times: {
+              "now": (new Date())
+            },
+            frames: [{
+              end: {
+                starting: "1s",
+                after: "now"
+              },
+              frameName: "test",
+              data: {}
+            }]
+          }),
+          received = false,
+          dataReceived = null;
+
+        kairos.subscribe("frameEnded/test", function (data, duration) {
           received = true;
           dataReceived = data;
         });
@@ -584,49 +679,81 @@ describe("Kairos", function () {
         });
       });
 
-      it("should switch to the next frame even if doing so would be mid-tick", function () {
+      // NOTE:
+      //   These next 2 tests are to ensure that things happen at the correct time
+      //   Unfortunately, setTimeout is intrinsically inaccurate, so a certain
+      //   amount of imprecision is unavoidable.  We've taken steps to minimize
+      //   the imprecision, but, YMMV.
+      var TIMING_PRECISION = 15;
+
+      it("should start each frame on time (BRITTLE)", function () {
         var
+          now = (new Date()).getTime(),
+          expectedStartTime = now + 1000,
           kairos = new KairosScheduler({
             times: {
-              "now": (new Date())
+              now: now
             },
             frames: [{
               begin: {
-                at: "now"
-              },
-              relatedTo: "now",
-              interval: 2000,
-              sync: false // don't sync, to make this test more predictable
-            }, {
-              begin: {
-                starting: "3s",
+                starting: "1s",
                 after: "now"
               }
             }]
           }),
-          ticksReceived = 0,
-          frameChanges = 0;
+          startReceived = false,
+          startTime = null;
 
-        kairos.subscribe("frameTicked", function (data, duration) {
-          if (0 !== duration) { // ignore ticks from the non-interval frames
-            ticksReceived += 1;
-          }
-        });
 
         kairos.subscribe("frameStarted", function () {
-          frameChanges += 1;
+          startReceived = true;
+          startTime = (new Date()).getTime();
         });
 
         waitsFor(function () {
-          return 1 === frameChanges;
+          return startReceived;
         });
 
         runs(function () {
-          expect(ticksReceived).toBe(1);
+          expect(Math.abs(expectedStartTime - startTime)).toBeLessThan(TIMING_PRECISION); // seen max of 148
         });
+
       });
 
-      it("should stop ticking when changing frames", function () {
+      it("should end each frame on time (BRITTLE)", function () {
+        var
+          now = (new Date()).getTime(),
+          expectedEndTime = now + 1000,
+          kairos = new KairosScheduler({
+            times: {
+              now: now
+            },
+            frames: [{
+              end: {
+                starting: "1s",
+                after: "now"
+              }
+            }]
+          }),
+          endReceived = false,
+          endTime = null;
+
+        kairos.subscribe("frameEnded", function () {
+          endReceived = true;
+          endTime = (new Date()).getTime();
+        });
+
+        waitsFor(function () {
+          return endReceived;
+        });
+
+        runs(function () {
+          expect(Math.abs(expectedEndTime - endTime)).toBeLessThan(TIMING_PRECISION);
+        });
+
+      });
+
+      it("should stop ticking a frame when that frame ends", function () {
         var
           kairos = new KairosScheduler({
             times: {
