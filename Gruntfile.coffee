@@ -35,6 +35,7 @@ module.exports = (grunt) ->
     concat:
       options:
         separator: '\n\n'
+        banner: '/*! <%= pkg.name %> v<%= pkg.version %> <%= grunt.template.today("yyyy-mm-dd") %> */\n'
       build:
         src: [
           'lib/kairos_frame.js'
