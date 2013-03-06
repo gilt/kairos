@@ -59,19 +59,6 @@ describe("Kairos", function () {
         expect(kairos._options.frames[2].sync).toBe(true);
       });
 
-      it("should default and/or convert the 'begin' property to a timestamp (milliseconds) with a default of 0", function () {
-        var
-          kairos = new KairosScheduler({
-            frames: [{
-              begin: {}
-            }, {
-            }]
-          });
-
-        expect(kairos._options.frames[0].begin).toBe(0);
-        expect(kairos._options.frames[1].begin).toBe(0);
-      });
-
       it("should lookup named 'relatedTo' times from the list of 'times'", function () {
         var
           kairos = new KairosScheduler({
@@ -97,6 +84,36 @@ describe("Kairos", function () {
           });
 
         expect(kairos._options.frames[0].relatedTo).toBe(0);
+      });
+
+      it("should default and/or convert the 'begin' property to a timestamp (milliseconds) with a default of 0", function () {
+        var
+          kairos = new KairosScheduler({
+            frames: [{
+              begin: {}
+            }, {
+              begin: 1000
+            }, {
+            }]
+          });
+
+        expect(kairos._options.frames[0].begin).toBe(0);
+        expect(kairos._options.frames[1].begin).toBe(1000);
+        expect(kairos._options.frames[2].begin).toBe(0);
+      });
+
+      it("should lookup named 'begin' times from the list of 'times'", function () {
+        var
+          kairos = new KairosScheduler({
+            times: {
+              "test": new Date(0)
+            },
+            frames: [{
+              begin: "test"
+            }]
+          });
+
+        expect(kairos._options.frames[0].begin).toBe(0);
       });
 
       it("should lookup 'begin.at' times from the list of 'times'", function () {
