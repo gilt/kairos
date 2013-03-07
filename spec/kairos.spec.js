@@ -496,7 +496,7 @@ describe("Kairos", function () {
           received = false,
           dataReceived = null;
 
-        kairos.subscribe("frameStarted", function (data, duration) {
+        kairos.subscribe("frameStarted", function (duration, data) {
           received = true;
           dataReceived = data;
         });
@@ -532,7 +532,7 @@ describe("Kairos", function () {
           received = false,
           dataReceived = null;
 
-        kairos.subscribe("frameStarted/test", function (data, duration) {
+        kairos.subscribe("frameStarted/test", function (duration, data) {
           received = true;
           dataReceived = data;
         });
@@ -563,7 +563,7 @@ describe("Kairos", function () {
           received = false,
           durationReceived = null;
 
-        kairos.subscribe("frameTicked", function (frame, duration) {
+        kairos.subscribe("frameTicked", function (duration, data) {
           received = true;
           durationReceived = duration;
         });
@@ -595,7 +595,7 @@ describe("Kairos", function () {
           received = false,
           durationReceived = null;
 
-        kairos.subscribe("frameTicked/test", function (frame, duration) {
+        kairos.subscribe("frameTicked/test", function (duration, data) {
           received = true;
           durationReceived = duration;
         });
@@ -625,7 +625,7 @@ describe("Kairos", function () {
           received = false,
           durationReceived = null;
 
-        kairos.subscribe("frameTicked", function (frame, duration) {
+        kairos.subscribe("frameTicked", function (duration, data) {
           received = true;
           durationReceived = duration;
         });
@@ -656,7 +656,7 @@ describe("Kairos", function () {
           received = false,
           dataReceived = null;
 
-        kairos.subscribe("frameEnded", function (data, duration) {
+        kairos.subscribe("frameEnded", function (duration, data) {
           received = true;
           dataReceived = data;
         });
@@ -688,7 +688,7 @@ describe("Kairos", function () {
           received = false,
           dataReceived = null;
 
-        kairos.subscribe("frameEnded/test", function (data, duration) {
+        kairos.subscribe("frameEnded/test", function (duration, data) {
           received = true;
           dataReceived = data;
         });
@@ -881,7 +881,7 @@ describe("Kairos", function () {
           ticksReceived = 0,
           frameChanges = 0;
 
-        kairos.subscribe("frameTicked", function (data, duration) {
+        kairos.subscribe("frameTicked", function (duration, data) {
           if (0 !== duration) { // ignore ticks from the non-interval frames
             ticksReceived += 1;
           }

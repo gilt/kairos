@@ -121,16 +121,17 @@ Creates a new scheduler using the times and frames passed in.
       - Date object
       - Hash, in one of these 4 forms:
       
-            {
-              starting: {Number|String},
-              before: {Number|Date|String}
-            }  
+             {
+               starting: {Number|String},
+               before: {Number|Date|String}
+             }  
         or
             
             {
               starting: {Number|String},
               after: {Number|Date|String}
             }
+            
         or
           
             {
@@ -213,8 +214,8 @@ Subscribes to a published notification.
     - frameEnded/{frameName}
     - frameTicked/{frameName}
 - All six types of notification get the same 2 arguments passed in:
+  - duration, since/until the 'relatedTo' time
   - data, from the original frame configuration
-  - duration, since/until the 'relatedTo' time 
     
 ### KairosScheduler::start()
 
