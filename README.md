@@ -119,8 +119,7 @@ Creates a new scheduler using the times and frames passed in.
     - Possible values for a begin/end:
       - Unix timestamp
       - Date object
-      - Hash, in one of these 4 forms:
-
+      - Hash, in one of these 4 forms
 
             {
               starting: {Number|String},
