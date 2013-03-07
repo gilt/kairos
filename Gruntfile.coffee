@@ -25,7 +25,7 @@ module.exports = (grunt) ->
         browser:   true
         node:      true
     jasmine:
-      chron:
+      kairos:
         src: '<%= meta.src %>',
         options:
           specs:  '<%= meta.specs %>'
