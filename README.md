@@ -120,12 +120,12 @@ Creates a new scheduler using the times and frames passed in.
       - Unix timestamp
       - Date object
       - Hash, in one of these 4 forms:
-      
+
             {
               starting: {Number|String},
               before: {Number|Date|String}
             } 
-              
+
         or
             
             {
