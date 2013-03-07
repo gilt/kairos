@@ -102,6 +102,17 @@ describe("Kairos", function () {
         expect(kairos._options.frames[2].begin).toBe(0);
       });
 
+      it("should convert a 'begin' Date object to a timestamp", function () {
+        var
+          kairos = new KairosScheduler({
+            frames: [{
+              begin: (new Date(0))
+            }]
+          });
+
+        expect(kairos._options.frames[0].begin).toBe(0);
+      });
+
       it("should lookup 'begin.at' times from the list of 'times'", function () {
         var
           kairos = new KairosScheduler({
@@ -514,7 +525,7 @@ describe("Kairos", function () {
                 starting: "59s",
                 before: "test"
               },
-              frameName: "test",
+              name: "test",
               data: {}
             }]
           }),
@@ -578,7 +589,7 @@ describe("Kairos", function () {
               },
               relatedTo: "test",
               interval: 1000,
-              frameName: "test"
+              name: "test"
             }]
           }),
           received = false,
@@ -670,7 +681,7 @@ describe("Kairos", function () {
                 starting: "1s",
                 after: "now"
               },
-              frameName: "test",
+              name: "test",
               data: {}
             }]
           }),
