@@ -102,20 +102,6 @@ describe("Kairos", function () {
         expect(kairos._options.frames[2].begin).toBe(0);
       });
 
-      it("should lookup named 'begin' times from the list of 'times'", function () {
-        var
-          kairos = new KairosScheduler({
-            times: {
-              "test": new Date(0)
-            },
-            frames: [{
-              begin: "test"
-            }]
-          });
-
-        expect(kairos._options.frames[0].begin).toBe(0);
-      });
-
       it("should lookup 'begin.at' times from the list of 'times'", function () {
         var
           kairos = new KairosScheduler({
@@ -374,6 +360,92 @@ describe("Kairos", function () {
 
         expect(kairos._options.frames[0].interval).toBe(1000);
         expect(kairos._options.frames[1].interval).toBe(2000);
+      });
+    });
+
+    describe("Natural Language", function () {
+      it("should parse 'begin' strings of the form 'starting 2s after foo' with variations", function () {
+        var
+          kairos = new KairosScheduler({
+            times: {
+              "foo": new Date(0)
+            },
+            frames: [{
+              begin: "starting 2s after foo"
+            }, {
+              begin: "2s after foo"
+            }, {
+              begin: "2 seconds after foo"
+            }, {
+              begin: "5 minutes and 2 seconds after foo"
+            }]
+          });
+
+        expect(kairos._options.frames[0].begin).toBe(2000);
+        expect(kairos._options.frames[1].begin).toBe(2000);
+        expect(kairos._options.frames[2].begin).toBe(2000);
+        expect(kairos._options.frames[3].begin).toBe(302000);
+      });
+
+      it("should parse 'begin' strings of the form 'starting 2s before foo.' with variations", function () {
+        var
+          kairos = new KairosScheduler({
+            times: {
+              "foo": new Date(0)
+            },
+            frames: [{
+              begin: "starting 2s before foo"
+            }, {
+              begin: "2s before foo"
+            }, {
+              begin: "2 seconds before foo"
+            }, {
+              begin: "2 seconds and 5 minutes before foo"
+            }]
+          });
+
+        expect(kairos._options.frames[0].begin).toBe(-2000);
+        expect(kairos._options.frames[1].begin).toBe(-2000);
+        expect(kairos._options.frames[2].begin).toBe(-2000);
+        expect(kairos._options.frames[3].begin).toBe(-302000);
+      });
+
+      it("should parse 'begin' strings of the form 'interpolated 50% between foo and bar' with variations", function () {
+        var
+          kairos = new KairosScheduler({
+            times: {
+              "foo": 0,
+              "bar": 1000
+            },
+            frames: [{
+              begin: "interpolated 50% between foo and bar"
+            }, {
+              begin: "50% between foo and bar"
+            }, {
+              begin: "0.5 between foo and bar"
+            }]
+          });
+
+        expect(kairos._options.frames[0].begin).toBe(500);
+        expect(kairos._options.frames[1].begin).toBe(500);
+        expect(kairos._options.frames[2].begin).toBe(500);
+      });
+
+      it("should parse 'begin' strings of the form 'at foo' with variations", function () {
+        var
+          kairos = new KairosScheduler({
+            times: {
+              "foo": new Date(0)
+            },
+            frames: [{
+              begin: "at foo"
+            }, {
+              begin: "foo"
+            }]
+          });
+
+        expect(kairos._options.frames[0].begin).toBe(0);
+        expect(kairos._options.frames[1].begin).toBe(0);
       });
     });
 
