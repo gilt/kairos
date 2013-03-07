@@ -1,4 +1,4 @@
-/*! kairos v0.0.1 2013-03-06 */
+/*! kairos v0.0.1 2013-03-07 */
 /* global _: false */
 (function(exports, _) {
 
@@ -42,8 +42,8 @@
       var
         now,
         message = [
-          this._data,
-          (this._relatedTime - (new Date()).getTime()) || 0
+          (this._relatedTime - (new Date()).getTime()) || 0,
+          this._data
         ];
 
       this._parent.publish('frameTicked', message);
@@ -76,8 +76,8 @@
 
       var
         message = [
-          this._data,
-          (this._relatedTime - (new Date()).getTime()) || 0
+          (this._relatedTime - (new Date()).getTime()) || 0,
+          this._data
         ];
 
       this._parent.logger.info('Ending Frame', this._name);
@@ -104,8 +104,8 @@
 
       var
         message = [
-          this._data,
-          (this._relatedTime - (new Date()).getTime()) || 0
+          (this._relatedTime - (new Date()).getTime()) || 0,
+          this._data
         ];
 
       this._parent.logger.info('Starting Frame', this._name);
@@ -137,7 +137,7 @@
    */
   function KairosFrame (parent, frame) {
     this._parent = parent;
-    this._name = frame.frameName;
+    this._name = frame.name;
     this._beginsAt = frame.begin;
     this._endsAt = frame.end;
     this._tickInterval = frame.interval;
@@ -261,8 +261,8 @@
   exports.KairosFrame = KairosFrame;
 
 }(
-  'object' === typeof exports && exports || this, // exports
-  this._ || this.require && require('underscore') // _
+  'object' === typeof exports && exports || this,
+  'object' === typeof exports && require('underscore') || this._
 ));
 
 /* global _: false */
@@ -290,14 +290,36 @@
       };
     },
 
+    // TODO: this should be configurable, for intl purposes
+    NATURAL_LANGUAGE_PARSERS = [
+      {
+        mode: 'interpolated',
+        regex: /(?:(?:interpolated)\s+)?(.*)\s+(?:between|from)\s+(.*)\s+(?:and|to)\s+(.*)/
+      },
+      {
+        mode: 'after',
+        regex: /(?:(?:starting)\s+)?(.*)\s+(?:after|from|following)\s+(.*)/
+      },
+      {
+        mode: 'before',
+        regex: /(?:(?:starting)\s+)?(.*)\s+(?:before|until|preceeding)\s+(.*)/
+      },
+      {
+        mode: 'at',
+        regex: /(?:(?:at)\s+)?(.*)/
+      }
+    ],
+
     DURATION_MULTIPLIERS = [
       1000 * 60 * 60 * 24 * 365,
       1000 * 60 * 60 * 24 * 30,
       1000 * 60 * 60 * 24,
       1000 * 60 * 60,
       1000 * 60,
-      1000
+      1000,
+      1
     ],
+
     DURATION_PARSER = new RegExp(
       '^' +
         '\\s*P?\\s*' +
@@ -332,10 +354,15 @@
         ')?' +
       '$',
       'i'
-    );
+    ),
+
+    // TODO: this should be configurable, for intl purposes
+    NATURAL_LANGUAGE_DURATION_PARSERS = [
+      /(\d+)\s*(y(?:ear)?s?)?(mon(?:th)?s?)?(d(?:ay)?s?)?(h(?:our)?s?)?(min(?:ute)?s?)?(s(?:econd)?s?)?/gi
+    ];
 
   /**
-   * Converts an LDML style duration to milliseconds
+   * Converts an LDML or natural language style duration to milliseconds
    *
    * @private
    * @method  millisecondsFromDuration
@@ -345,9 +372,32 @@
    * @return  {Number}
    */
   function millisecondsFromDuration (duration) {
+    var parts = duration.match(DURATION_PARSER); // Parses LDML only
+
+    if (parts) {
+      parts = parts.splice(1);
+    } else {
+      parts = [0,0,0,0,0,0,0];
+      _.find(NATURAL_LANGUAGE_DURATION_PARSERS, function (parser) {
+        if (duration.match(parser)) {
+          duration.replace(parser, function (all, qty) {
+            var index;
+            _.find(_.rest(arguments, 2), function (v, i) {
+              index = i;
+              return !!v;
+            });
+            parts[index] = parseInt(qty, 10);
+          });
+
+          return true;
+        }
+        return false;
+      });
+    }
+
     return _.reduce(
       _.map(
-        duration.match(DURATION_PARSER).splice(1),
+        parts,
         function (n, i) {
           return (parseInt(n, 10) * DURATION_MULTIPLIERS[i]) || 0;
         }
@@ -403,59 +453,96 @@
 
     if (_.isNumber(obj)) {
       returnValue = obj;
-    } else {
+    } else if (_.isDate(obj)) {
 
-      normalizeTimestamp(obj, 'at', times);
-      normalizeTimestamp(obj, 'after', times);
-      normalizeTimestamp(obj, 'before', times);
-      normalizeTimestamp(obj, 'between', times);
-      normalizeTimestamp(obj, 'and', times);
+    } else if (_.isString(obj)) {
+      returnValue = times[obj];
 
-      /*
-       begin.interpolated is a percent, in either decimal form, or string form.
-       We want to normalize this to decimal form.
-       */
-      if (_.isString(obj.interpolated)) {
-        obj.interpolated = parseFloat(obj.interpolated) / 100;
-      }
+      _.find(NATURAL_LANGUAGE_PARSERS, function (parser) {
+        var results = obj.match(parser.regex);
 
-      /*
-       begin.starting is a duration, in either millisecond form, or LDML string
-       form. We want to normalize this to millisecond form.
-       */
-      if (_.isString(obj.starting)) {
-        obj.starting = millisecondsFromDuration(obj.starting);
-      }
-
-      /* The simplest scenario: starts the frame at a specific time */
-      if (_.isNumber(obj.at)) {
-
-        returnValue = obj.at;
-
-        /* Starts the frame at an offset before or after a specific time */
-      } else if (_.isNumber(obj.starting)) {
-        if (_.isNumber(obj.before)) {
-
-          returnValue = obj.before - obj.starting;
-
-        } else if(_.isNumber(obj.after)) {
-
-          returnValue = obj.after  + obj.starting;
-
+        if (results) {
+          switch (parser.mode) {
+          case 'interpolated':
+            obj = {
+              interpolated: /%/.test(results[1]) ? results[1] : parseFloat(results[1]),
+              between: results[2],
+              and: results[3]
+            };
+            break;
+          case 'after':
+            obj = {
+              starting: results[1],
+              after: results[2]
+            };
+            break;
+          case 'before':
+            obj = {
+              starting: results[1],
+              before: results[2]
+            };
+            break;
+          case 'at':
+            obj = {
+              at: results[1]
+            };
+          }
         }
 
-        /*
-         In this scenario, the frame will begin at a moment that is interpolated
-         between two specific times.
-         */
-      } else if (
-        _.isNumber(obj.interpolated) &&
-          _.isNumber(obj.between) &&
-          _.isNumber(obj.and)) {
+        return !!results;
+      });
+    }
 
-        returnValue = obj.between + (obj.and - obj.between) * obj.interpolated;
+    normalizeTimestamp(obj, 'at', times);
+    normalizeTimestamp(obj, 'after', times);
+    normalizeTimestamp(obj, 'before', times);
+    normalizeTimestamp(obj, 'between', times);
+    normalizeTimestamp(obj, 'and', times);
+
+    /*
+     begin.interpolated is a percent, in either decimal form, or string form.
+     We want to normalize this to decimal form.
+     */
+    if (_.isString(obj.interpolated)) {
+      obj.interpolated = parseFloat(obj.interpolated) / 100;
+    }
+
+    /*
+     begin.starting is a duration, in either millisecond form, or LDML string
+     form. We want to normalize this to millisecond form.
+     */
+    if (_.isString(obj.starting)) {
+      obj.starting = millisecondsFromDuration(obj.starting);
+    }
+
+    /* The simplest scenario: starts the frame at a specific time */
+    if (_.isNumber(obj.at)) {
+
+      returnValue = obj.at;
+
+      /* Starts the frame at an offset before or after a specific time */
+    } else if (_.isNumber(obj.starting)) {
+      if (_.isNumber(obj.before)) {
+
+        returnValue = obj.before - obj.starting;
+
+      } else if(_.isNumber(obj.after)) {
+
+        returnValue = obj.after  + obj.starting;
 
       }
+
+      /*
+       In this scenario, the frame will begin at a moment that is interpolated
+       between two specific times.
+       */
+    } else if (
+      _.isNumber(obj.interpolated) &&
+        _.isNumber(obj.between) &&
+        _.isNumber(obj.and)) {
+
+      returnValue = obj.between + (obj.and - obj.between) * obj.interpolated;
+
     }
 
     return returnValue;
@@ -473,7 +560,7 @@
    * @param  {Object[]}        options.frames                       Set of frames
    * @param  {Number|String}   options.frames.relatedTo             Time to count towards/from
    * @param  {Number}          [options.frames.interval]            Interval between renders
-   * @param  {String}          [options.frames.frameName]           If this frame is named, we'll fire a special pubsub event when we reach it
+   * @param  {String}          [options.frames.name]                If this frame is named, we'll fire a special pubsub event when we reach it
    * @param  {Boolean|Number}  [options.frames.sync=true]           Should we ensure that we render exactly on the (second/minute/hour/day) ?
    * @param  {Object}          options.frames.begin                 When does a frame begin?
    * @param  {Object}          options.frames.end                   When does a frame end?
@@ -529,7 +616,7 @@
    * @param  {Object[]}        options.frames                       Set of frames
    * @param  {Number|String}   options.frames.relatedTo             Time to count towards/from
    * @param  {Number}          [options.frames.interval]            Interval between renders
-   * @param  {String}          [options.frames.frameName]           If this frame is named, we'll fire a special pubsub event when we reach it
+   * @param  {String}          [options.frames.name]                If this frame is named, we'll fire a special pubsub event when we reach it
    * @param  {Boolean|Number}  [options.frames.sync=true]           Should we ensure that we render exactly on the (second/minute/hour/day) ?
    * @param  {Object}          options.frames.begin                 When does a frame begin?
    * @param  {Number|String}   [options.frames.begin.at]            Begin at a specific time, e.g. 0 or "teatime" or 1234567890
@@ -657,6 +744,6 @@
 
 }(
   'object' === typeof exports && exports || this,
-  this._ || this.require && require('underscore'),
-  this.KairosFrame || 'object' === typeof exports && exports.KairosFrame
+  'object' === typeof exports && require('underscore') || this._,
+  'object' === typeof exports && exports.KairosFrame || this.KairosFrame
 ));
