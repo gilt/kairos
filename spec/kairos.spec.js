@@ -264,6 +264,19 @@ describe('Kairos', function () {
         expect(kairos._options.frames[1].begin).toBe(1000);
       });
 
+      it('should use the default value if "starting" is provided with neither "before" nor "after"', function () {
+        var
+          kairos = new KairosScheduler({
+            frames: [{
+              begin: {
+                starting: 1000
+              }
+            }]
+          });
+
+        expect(kairos._options.frames[0].begin).toBe(0);
+      });
+
       it('should convert an "interpolated" + "between" + "and" begin time to milliseconds', function () {
         var
           kairos = new KairosScheduler({
@@ -458,6 +471,20 @@ describe('Kairos', function () {
 
         expect(kairos._options.frames[0].begin).toBe(0);
         expect(kairos._options.frames[1].begin).toBe(0);
+      });
+
+      it('should use a duration of 0 if it cannot parse a natural language duration', function () {
+        var
+          kairos = new KairosScheduler({
+            frames: [{
+              begin: {
+                starting: 'una minuto',
+                before: (new Date(1000))
+              }
+            }]
+          });
+
+        expect(kairos._options.frames[0].begin).toBe(1000);
       });
     });
 
@@ -900,6 +927,35 @@ describe('Kairos', function () {
           expect(ticksReceived).toBe(1);
         });
       });
+
+      it('should be able to sync to an arbitary interval', function () {
+        var
+          kairos = new KairosScheduler({
+            frames: [{
+              interval: 1000,
+              sync: 500
+            }]
+          }),
+          tickReceived = false,
+          tickTime;
+
+        kairos.subscribe('frameTicked', function () {
+          tickReceived = true;
+          tickTime = (new Date()).getTime();
+        });
+
+        waitsFor(function () {
+          return tickReceived;
+        });
+
+        runs(function () {
+          var tick = tickTime % 500;
+          if (250 < tick) {
+            tick = 500 - tick;
+          }
+          expect(tick).toBeLessThan(TIMING_PRECISION);
+        });
+      });
     });
 
     describe('Start/Pause/Resume', function () {
@@ -1094,6 +1150,138 @@ describe('Kairos', function () {
           expect(tickReceived).toBe(true);
         });
       });
+
+      it('should not resume if we are not paused', function () {
+        var
+          kairos = new KairosScheduler({
+            frames: [{
+              interval: 100,
+              sync: false
+            }]
+          }),
+          ticksReceived = 0,
+          waitFinished = false;
+
+        kairos.subscribe('frameTicked', function () {
+          ticksReceived += 1;
+        });
+
+        kairos.resume();
+
+        setTimeout(function () {
+          waitFinished = true;
+        }, 150);
+
+        waitsFor(function () {
+          return waitFinished;
+        });
+
+        runs(function () {
+          expect(ticksReceived).toBe(1);
+        });
+      });
+
+      it('should not resume if we are not started', function () {
+        var
+          kairos = new KairosScheduler({
+            times: {
+              'now': (new Date())
+            },
+            frames: [{
+              begin: {
+                starting: 'PT1M',
+                after: 'now'
+              },
+              interval: 100,
+              sync: false
+            }]
+          }),
+          tickReceived = false,
+          waitFinished = false;
+
+        kairos.subscribe('frameTicked', function () {
+          tickReceived = true;
+        });
+
+        kairos.pause();
+        kairos.resume();
+
+        setTimeout(function () {
+          waitFinished = true;
+        }, 150);
+
+        waitsFor(function () {
+          return waitFinished;
+        });
+
+        runs(function () {
+          expect(tickReceived).toBe(false);
+        });
+      });
+
+      it('should not resume if we are ended', function () {
+        var
+          kairos = new KairosScheduler({
+            times: {
+              'now': (new Date())
+            },
+            frames: [{
+              end: {
+                starting: 'PT1M',
+                before: 'now'
+              },
+              interval: 100,
+              sync: false
+            }]
+          }),
+          tickReceived = false,
+          waitFinished = false;
+
+        kairos.subscribe('frameTicked', function () {
+          tickReceived = true;
+        });
+
+        kairos.pause();
+        kairos.resume();
+
+        setTimeout(function () {
+          waitFinished = true;
+        }, 150);
+
+        waitsFor(function () {
+          return waitFinished;
+        });
+
+        runs(function () {
+          expect(tickReceived).toBe(false);
+        });
+      });
+
+      it('should not start if are already started', function () {
+        var
+          kairos = new KairosScheduler({
+            frames: [{}]
+          }),
+          startReceived = false;
+
+        kairos.subscribe('frameStarted', function () {
+          startReceived = true;
+        });
+
+        kairos.start();
+
+        expect(startReceived).toBe(false);
+      });
+    });
+
+    it('should have a toJSON method on the KairosFrame, to prevent cycles', function () {
+      var
+        kairos = new KairosScheduler({
+          frames: [{}]
+        });
+
+      expect(kairos._frames[0].toJSON).not.toThrow();
+      expect(kairos._frames[0].toJSON()).toEqual(jasmine.any(Object));
     });
   });
 });

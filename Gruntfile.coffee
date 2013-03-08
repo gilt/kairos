@@ -40,7 +40,7 @@ module.exports = (grunt) ->
           browsers: [
             'Firefox'
           ]
-          reporters: ['dots', 'junit', 'coverage']
+          reporters: ['progress', 'coverage']
           # files: [] # Can't do this here, due to lack of JASMINE and JASMINE_ADAPTER global constants
     clean:
       build: ['dist', 'coverage']
