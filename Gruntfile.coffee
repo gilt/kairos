@@ -43,7 +43,7 @@ module.exports = (grunt) ->
           reporters: ['progress', 'coverage']
           # files: [] # Can't do this here, due to lack of JASMINE and JASMINE_ADAPTER global constants
     clean:
-      build: ['dist', 'coverage']
+      build: ['dist', 'coverage', 'test-results.xml']
     concat:
       options:
         separator: '\n\n'
