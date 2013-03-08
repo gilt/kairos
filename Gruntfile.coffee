@@ -30,8 +30,20 @@ module.exports = (grunt) ->
         options:
           specs:  '<%= meta.specs %>'
           vendor: ['node_modules/underscore/underscore.js']
+    testacular:
+      kairos:
+        options:
+          configFile: 'testacular.conf.js'
+          keepalive: true
+          preprocessors:
+            '**/lib/kairos*.js': 'coverage'
+          browsers: [
+            'Firefox'
+          ]
+          reporters: ['dots', 'junit', 'coverage']
+          # files: [] # Can't do this here, due to lack of JASMINE and JASMINE_ADAPTER global constants
     clean:
-      build: ['dist']
+      build: ['dist', 'coverage']
     concat:
       options:
         separator: '\n\n'
@@ -65,6 +77,7 @@ module.exports = (grunt) ->
   grunt.loadNpmTasks 'grunt-contrib-uglify'
   grunt.loadNpmTasks 'grunt-contrib-watch'
   grunt.loadNpmTasks 'grunt-release'
+  grunt.loadNpmTasks 'grunt-testacular'
 
   grunt.registerTask 'default', ['watch']
   grunt.registerTask 'build', ['clean:build', 'concat', 'uglify']
