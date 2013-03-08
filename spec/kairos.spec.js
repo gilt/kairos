@@ -903,19 +903,197 @@ describe('Kairos', function () {
     });
 
     describe('Start/Pause/Resume', function () {
-      it('should have a start method');
+      it('should have a start method', function () {
+        var
+          kairos = new KairosScheduler({
+            autoStart: false
+          });
 
-      it('should have a pause method');
+        expect(kairos.start).not.toThrow();
+      });
 
-      it('should have a resume method');
+      it('should have a pause method', function () {
+        var
+          kairos = new KairosScheduler();
 
-      it('should not fire frameTicked events after pause is called');
+        expect(kairos.pause).not.toThrow();
+      });
 
-      it('should still fire frameStarted events while paused');
+      it('should have a resume method', function () {
+        var
+          kairos = new KairosScheduler();
 
-      it('should still fire frameEnded events while paused');
+        expect(kairos.resume).not.toThrow();
+      });
 
-      it('should resume firing frameTicked events after resume is called');
+      it('should not fire any events until start has been called (assuming autoStart is false)', function () {
+        var
+          kairos = new KairosScheduler({
+            frames: [{
+              begin: 0
+            }],
+            autoStart: false
+          }),
+          startReceived = false;
+
+        // normally, if autoStart were true, any frames that started in the past
+        // would be started before we got to this line.
+        kairos.subscribe('frameStarted', function () {
+          startReceived = true;
+        });
+
+        expect(startReceived).toBe(false); // sanity check
+
+        kairos.start();
+
+        expect(startReceived).toBe(true);
+      });
+
+      it('should not fire frameTicked events after pause is called', function () {
+        var
+          kairos = new KairosScheduler({
+            frames: [{
+              interval: 100,
+              sync: false
+            }]
+          }),
+          tickReceived = false,
+          waitFinished = false;
+
+        kairos.subscribe('frameTicked', function () {
+          tickReceived = true;
+        });
+
+        waitsFor(function () {
+          return tickReceived;
+        });
+
+        runs(function () {
+          kairos.pause();
+
+          tickReceived = false; // reset
+
+          setTimeout(function () {
+            waitFinished = true;
+          }, 200);
+        });
+
+        waitsFor(function () {
+          return waitFinished;
+        });
+
+        runs(function () {
+          expect(tickReceived).toBe(false);
+        });
+      });
+
+      it('should still fire frameStarted events while paused', function () {
+        var
+          kairos = new KairosScheduler({
+            frames: [{
+              begin: (new Date()).getTime() + 100
+            }]
+          }),
+          startReceived = false,
+          waitFinished = false;
+
+        kairos.subscribe('frameStarted', function () {
+          startReceived = true;
+        });
+
+        kairos.pause();
+
+        expect(startReceived).toBe(false); // sanity check
+
+        setTimeout(function () {
+          waitFinished = true;
+        }, 150);
+
+        waitsFor(function () {
+          return waitFinished;
+        });
+
+        runs(function () {
+          expect(startReceived).toBe(true);
+        });
+      });
+
+      it('should still fire frameEnded events while paused', function () {
+        var
+          kairos = new KairosScheduler({
+            frames: [{
+              end: (new Date()).getTime() + 100
+            }]
+          }),
+          endReceived = false,
+          waitFinished = false;
+
+        kairos.subscribe('frameEnded', function () {
+          endReceived = true;
+        });
+
+        kairos.pause();
+
+        expect(endReceived).toBe(false); // sanity check
+
+        setTimeout(function () {
+          waitFinished = true;
+        }, 150);
+
+        waitsFor(function () {
+          return waitFinished;
+        });
+
+        runs(function () {
+          expect(endReceived).toBe(true);
+        });
+      });
+
+      it('should resume firing frameTicked events after resume is called', function () {
+        var
+          kairos = new KairosScheduler({
+            frames: [{
+              interval: 100,
+              sync: false
+            }]
+          }),
+          tickReceived = false,
+          waitFinished = false;
+
+        kairos.subscribe('frameTicked', function () {
+          tickReceived = true;
+        });
+
+        kairos.pause();
+
+        setTimeout(function () {
+          waitFinished = true;
+        }, 200);
+
+        waitsFor(function () {
+          return waitFinished;
+        });
+
+        runs(function () {
+          expect(tickReceived).toBe(false);
+
+          kairos.resume();
+
+          waitFinished = false; // reset
+
+          setTimeout(function () {
+            waitFinished = true;
+          }, 200);
+        });
+
+        waitsFor(function () {
+          return waitFinished;
+        });
+
+        runs(function () {
+          expect(tickReceived).toBe(true);
+        });
+      });
     });
   });
 });
