@@ -1,4 +1,4 @@
-/*! kairos v0.0.1 2013-03-07 */
+/*! kairos v0.0.1 2013-03-08 */
 /* global _: false */
 (function(exports, _) {
 
@@ -49,7 +49,7 @@
       this._parent.publish('frameTicked', message);
 
       if (this._name) {
-        this._parent.publish('frameTicked/' + this._name, message);
+        this._parent.publish(this._name + '/ticked', message);
       }
 
       if (this._tickInterval) {
@@ -84,7 +84,7 @@
       this._parent.publish('frameEnded', message);
 
       if (this._name) {
-        this._parent.publish('frameEnded/' + this._name, message);
+        this._parent.publish(this._name + '/ended', message);
       }
     }
   }
@@ -112,7 +112,7 @@
       this._parent.publish('frameStarted', message);
 
       if (this._name) {
-        this._parent.publish('frameStarted/' + this._name, message);
+        this._parent.publish(this._name +  '/started', message);
       }
 
       // QUESTION: should this be called immediately, or on a timeout?
@@ -165,7 +165,9 @@
      */
     start: function () {
       var now = (new Date()).getTime();
-      if (this._beginsAt <= now) {
+      if (this._endsAt <= now) {
+        this._ended = true;
+      } else if (this._beginsAt <= now) {
         start.call(this);
       } else {
         setTimeout(_.bind(start, this), this._beginsAt - now);

@@ -560,7 +560,7 @@ describe('Kairos', function () {
           received = false,
           dataReceived = null;
 
-        kairos.subscribe('frameStarted/test', function (duration, data) {
+        kairos.subscribe('test/started', function (duration, data) {
           received = true;
           dataReceived = data;
         });
@@ -623,7 +623,7 @@ describe('Kairos', function () {
           received = false,
           durationReceived = null;
 
-        kairos.subscribe('frameTicked/test', function (duration, data) {
+        kairos.subscribe('test/ticked', function (duration, data) {
           received = true;
           durationReceived = duration;
         });
@@ -716,7 +716,7 @@ describe('Kairos', function () {
           received = false,
           dataReceived = null;
 
-        kairos.subscribe('frameEnded/test', function (duration, data) {
+        kairos.subscribe('test/ended', function (duration, data) {
           received = true;
           dataReceived = data;
         });
