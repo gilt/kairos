@@ -1,6 +1,6 @@
 describe("Kairos", function () {
   describe("Scheduler", function () {
-    describe("Constructor", function () {
+    xdescribe("Constructor", function () {
       it("should privately expose its options as '_options'", function () {
         var
           kairos = new KairosScheduler();
@@ -374,7 +374,7 @@ describe("Kairos", function () {
       });
     });
 
-    describe("Natural Language", function () {
+    xdescribe("Natural Language", function () {
       it("should parse 'begin' strings of the form 'starting 2s after foo' with variations", function () {
         var
           kairos = new KairosScheduler({
@@ -460,7 +460,7 @@ describe("Kairos", function () {
       });
     });
 
-    describe("Notifications", function () {
+    xdescribe("Notifications", function () {
       it("should have a pubsub system", function () {
         var
           kairos = new KairosScheduler({}),
@@ -703,7 +703,7 @@ describe("Kairos", function () {
       });
     });
 
-    describe("Scheduling", function () {
+    xdescribe("Scheduling", function () {
       it("should be able to run an arbitrary number of frames", function () {
         var
           kairos = new KairosScheduler({
@@ -899,6 +899,22 @@ describe("Kairos", function () {
           expect(ticksReceived).toBe(1);
         });
       });
+    });
+
+    describe("Start/Pause/Resume", function () {
+      it("should have a start method");
+
+      it("should have a pause method");
+
+      it("should have a resume method");
+
+      it("should not fire frameTicked events after pause is called");
+
+      it("should still fire frameStarted events while paused");
+
+      it("should still fire frameEnded events while paused");
+
+      it("should resume firing frameTicked events after resume is called");
     });
   });
 });
