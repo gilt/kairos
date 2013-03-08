@@ -6,10 +6,10 @@ module.exports = (grunt) ->
       specs: 'spec/**/*.spec.js'
     watch:
       test:
-        files: ['<%= meta.src %>','<%= meta.specs %>']
+        files: ['<%= meta.src %>', '<%= meta.specs %>']
         tasks: 'test'
     jshint:
-      src: ['<%= meta.src %>']
+      src: ['<%= meta.src %>', '<%= meta.specs %>']
       options:
         curly:     true
         expr:      true

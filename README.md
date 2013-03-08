@@ -29,10 +29,10 @@ countdown, a calendar, job runner, or even part of a game engine.
     // Moderately Complex Example:
     var myScheduler = new KairosScheduler({
       times: {
-        "epoch": 0,
-        "now": (new Date()),
-        "lunchTime": 1362589200000,
-        "dinnerTime": 1362616200000
+        'epoch': 0,
+        'now': (new Date()),
+        'lunchTime': 1362589200000,
+        'dinnerTime': 1362616200000
       },
       frames: [
       
@@ -40,47 +40,47 @@ countdown, a calendar, job runner, or even part of a game engine.
         // machine) and will end when the next frame starts.
         {
           begin: 0,
-          name: "history"
+          name: 'history'
         },
         
-        // The first "real" frame, which starts… …NOW!  This frame will end in 1
+        // The first 'real' frame, which starts… …NOW!  This frame will end in 1
         // hour, and we will get a tick every minute, on the minute.
         {
           begin: {
-            at: "now"
+            at: 'now'
           },
           end: {
-            starting: "1H",
-            after: "now"
+            starting: '1H',
+            after: 'now'
           },
-          name: "nextHour",
-          interval: "1M"          
+          name: 'nextHour',
+          interval: '1M'          
         },
         
         // This one will start an hour before lunch, will tick every 15 seconds
         // until the start of the next frame (lunch time) and the tick will
-        // receive a duration in milliseconds relative to the "lunch" time.
+        // receive a duration in milliseconds relative to the 'lunch' time.
         {
           begin: {
-            starting: "1H",
-            before: "lunch"
+            starting: '1H',
+            before: 'lunch'
           },
-          name: "lateMorning",
+          name: 'lateMorning',
           interval: 15000,
-          relatedTo: "lunch",
+          relatedTo: 'lunch',
           data: {
             menu: {...}
           }
         },
         
-        // The "earlyAfternoon" timeframe starts at lunch time and ends halfway
+        // The 'earlyAfternoon' timeframe starts at lunch time and ends halfway
         // between lunch and dinner.  Ticks will be fired every 15 minutes.
         {
-          begin: "at lunch",
-          end: "50% between lunch and dinner"
-          name: "earlyAfternoon",
-          interval: "15M",
-          relatedTo: "lunch",
+          begin: 'at lunch',
+          end: '50% between lunch and dinner'
+          name: 'earlyAfternoon',
+          interval: '15M',
+          relatedTo: 'lunch',
           data: {
             dessertMenu: {...}
           }
@@ -88,13 +88,13 @@ countdown, a calendar, job runner, or even part of a game engine.
       ]
     });
     
-    myScheduler.subscribe("frameStarted/lateMorning", renderMenu);
-    myScheduler.subscribe("frameStarted/earlyAfternoon", renderMenu);
-    myScheduler.subscribe("frameEnded/earlyAfternoon", destroyMenu);
-    myScheduler.subscribe("frameTicked/lateMorning", renderLunchCountdown);
-    myScheduler.subscribe("frameTicked/earlyAfternoon", renderSiestaClock);
+    myScheduler.subscribe('frameStarted/lateMorning', renderMenu);
+    myScheduler.subscribe('frameStarted/earlyAfternoon', renderMenu);
+    myScheduler.subscribe('frameEnded/earlyAfternoon', destroyMenu);
+    myScheduler.subscribe('frameTicked/lateMorning', renderLunchCountdown);
+    myScheduler.subscribe('frameTicked/earlyAfternoon', renderSiestaClock);
     
-    $(".pauseButton").toggle(
+    $('.pauseButton').toggle(
       _.bind(KairosScheduler.prototype.pause, myScheduler), 
       _.bind(KairosScheduler.prototype.resume, myScheduler)
     );
@@ -149,25 +149,25 @@ Creates a new scheduler using the times and frames passed in.
               at: {Number|Date|String}
             }
         
-        "starting" is a duration, in either
+        'starting' is a duration, in either
           - milliseconds, e.g. 300000
-          - LDML, e.g. "PT5M"
-          - Natural Language, e.g. "5 Minutes"
+          - LDML, e.g. 'PT5M'
+          - Natural Language, e.g. '5 Minutes'
           
-        "interpolated" is a percentage, as either
+        'interpolated' is a percentage, as either
           - a floating point, e.g. 0.5
-          - or a percent string, e.g. "50%"
+          - or a percent string, e.g. '50%'
           
         the remaining fields (before, after, between, and, & at) are times:
           - a unix timestamp
           - a date object
           - or a named time
       - String, in a form which is basically the hash form concatenated:
-        - "starting 5 minutes before foo"
-        - "1 hour after foo"
-        - "50% from foo to bar"
-        - "foo"
-  - Frames have an optional "relatedTo" field, from which a duration is derived.
+        - 'starting 5 minutes before foo'
+        - '1 hour after foo'
+        - '50% from foo to bar'
+        - 'foo'
+  - Frames have an optional 'relatedTo' field, from which a duration is derived.
     - This field can be a number, date, or named time
   - Frames have an optional name field, which is used for frame specific notifications (below)
   - Frames have an optional data field, which is passed to all notifications.
@@ -198,22 +198,22 @@ Creates a new scheduler using the times and frames passed in.
 
 Publishes a notification. Intended for internal use.
 
-    myKairosScheduler.publish("foo", [fooData1, fooData2]);
+    myKairosScheduler.publish('foo', [fooData1, fooData2]);
     
 ### KairosScheduler::subscribe()
 
 Subscribes to a published notification.
 
-    myKairosScheduler.subscribe("foo", function (fooData1, fooData2) {
+    myKairosScheduler.subscribe('foo', function (fooData1, fooData2) {
       …
     });
     
 - Six types of notification are sent by KairosScheduler:
-  - Three "global" notifications:
+  - Three 'global' notifications:
     - frameStarted
     - frameEnded
     - frameTicked
-  - And three "frame specific" notifications:
+  - And three 'frame specific' notifications:
     - frameStarted/{frameName}
     - frameEnded/{frameName}
     - frameTicked/{frameName}
