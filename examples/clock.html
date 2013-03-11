@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Kairos Clock</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style type="text/css">
+      .clock {
+        bottom: 0;
+        font-size: 72px;
+        height: 72px;
+        left: 0;
+        margin: auto;
+        position: absolute;
+        right: 0;
+        text-align: center;
+        top: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="clock"></div>
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <script src="http://underscorejs.org/underscore-min.js"></script>
+    <script src="../dist/kairos.js"></script>
+    <script>
+      $(function () {
+        var clockScheduler = new KairosScheduler({
+          frames: [{
+            interval: '1s',
+            name: 'clock',
+            relatedTo: 0
+          }]
+        });
+
+        function fill2 (txt) {
+          if (2 > txt.length) {
+            return '0' + txt;
+          }
+          return txt;
+        }
+
+        // Okay, so, this is overkill, though it does give us syncing, which is NICE for a clock.
+        clockScheduler.subscribe('clock/ticked', function (duration, data) {
+          var date = new Date(-duration); // need a date object to do the timezone + leap * conversions
+          $('.clock').text(date.getHours() + ':' + fill2(date.getMinutes().toString()) + ':' + fill2(date.getSeconds().toString()));
+        });
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Kairos Countdown</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style type="text/css">
+    .clock {
+      bottom: 0;
+      font-size: 72px;
+      height: 72px;
+      left: 0;
+      margin: auto;
+      position: absolute;
+      right: 0;
+      text-align: center;
+      top: 0;
+    }
+  </style>
+</head>
+<body>
+<div class="clock"></div>
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+<script src="http://underscorejs.org/underscore-min.js"></script>
+<script src="../dist/kairos.js"></script>
+<script>
+  $(function () {
+    var clockScheduler = new KairosScheduler({
+      times: {
+        noon: (function () {
+          var
+            now = (new Date()).getTime(),
+            tzOffset = (4 * 60 * 60 * 1000), // ET (GMT-5 (usually (currently 4) -- TZs are HARD))
+            day = (24 * 60 * 60 * 1000),
+            midnight = (now + day - ((now + day) % day)) + tzOffset;
+
+          if (12 < Math.floor((midnight % day) / (60 * 60 * 1000))) {
+            return midnight + day / 2;
+          } else {
+            return midnight - day / 2;
+          }
+        }())
+      },
+      frames: [{
+        end: 'noon',
+        interval: '1s',
+        name: 'countdown',
+        relatedTo: 'noon'
+      }]
+    });
+
+    function fill2 (txt) {
+      if (2 > txt.length) {
+        return '0' + txt;
+      }
+      return txt;
+    }
+
+    clockScheduler.subscribe('countdown/ticked', function (duration, data) {
+      var
+        hours = Math.floor(duration / (60 * 60 * 1000)),
+        minutes = Math.floor((duration % (60 * 60 * 1000)) / (60 * 1000)),
+        seconds = Math.round((duration % (60 * 1000)) / 1000);
+
+      $('.clock').text(hours + ':' + fill2(minutes.toString()) + ':' + fill2(seconds));
+    });
+  });
+</script>
+</body>
+</html>

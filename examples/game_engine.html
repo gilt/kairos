@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Kairos Countdown</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style type="text/css">
+      body {
+        margin: 0;
+      }
+      .ball {
+        background-color: red;
+        border-radius: 20px;
+        height: 40px;
+        margin-left: -20px;
+        margin-top: -20px;
+        position: absolute;
+        width: 40px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="ball"></div>
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <script src="http://underscorejs.org/underscore-min.js"></script>
+    <script src="../dist/kairos.js"></script>
+    <script>
+      (function () {
+        var
+          FRAME_RATE = 60,
+          clock = new KairosScheduler({
+            times: {
+              'now': new Date()
+            },
+            frames: [{
+              interval: (1000 / FRAME_RATE),
+              relatedTo: 'now'
+            }]
+          }),
+          $window = $(window),
+          $ball = $('.ball'),
+          windowWidth = $window.width(),
+          windowHeight = $window.height(),
+          ballState = {
+            lastTick: 0,
+            radius: 20,
+            velocity: {
+              x: (Math.random() * 10 - 5),
+              y: (Math.random() * 10 - 5)
+            },
+            position: {
+              x: windowWidth / 2,
+              y: windowHeight / 2
+            }
+          };
+
+        $(window).on('resize', function () {
+          windowWidth = $window.width();
+          windowHeight = $window.height();
+        });
+
+        clock.subscribe('frameTicked', function (duration) {
+          var diff = 5 / -(duration - ballState.lastTick);
+          ballState.position.x += (ballState.velocity.x * diff);
+          ballState.position.y += (ballState.velocity.y * diff);
+
+          if (windowWidth < ballState.position.x + ballState.radius) {
+            ballState.velocity.x *= -1;
+            ballState.position.x = windowWidth - ballState.radius;
+          } else if (0 > ballState.position.x - ballState.radius) {
+            ballState.velocity.x *= -1;
+            ballState.position.x = ballState.radius;
+          }
+
+          if (windowHeight < ballState.position.y + ballState.radius) {
+            ballState.velocity.y *= -1;
+            ballState.position.y = windowHeight - ballState.radius;
+          } else if (0 > ballState.position.y - ballState.radius) {
+            ballState.velocity.y *= -1;
+            ballState.position.y = ballState.radius;
+          }
+
+          ballState.lastTick = duration;
+          $ball.css({
+            left: ballState.position.x,
+            top: ballState.position.y
+          });
+        });
+      }());
+    </script>
+  </body>
+</html>

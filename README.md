@@ -11,8 +11,9 @@ passing instant when an opening appears which must be driven through with force
 if success is to be achieved."
 
 Kairos is a (time) frame scheduler. Each frame has both a beginning and an
-ending, and can tick periodically. Notifications will be published when frames start, end, and tick. Kairos can be used for many purposes: a clock or
-countdown, a calendar, job runner, or even part of a game engine.
+ending, and can tick periodically. Notifications will be published when frames
+start, end, and tick. Kairos can be used for many purposes: a clock or countdown,
+a calendar, job runner, or even part of a game engine.
 
 ## Features
 
