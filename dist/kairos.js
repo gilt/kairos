@@ -550,6 +550,26 @@
     return returnValue;
   }
 
+  function normalizeFrame(frame, times) {
+    _.defaults(frame, {
+      sync: true,
+      begin: {},
+      end: {}
+    });
+
+    normalizeTimestamp(frame, 'relatedTo', times);
+
+    /*
+     interval is a duration, in either millisecond form, or LDML string form.
+     We want to normalize this to millisecond form.
+     */
+    if (_.isString(frame.interval)) {
+      frame.interval = millisecondsFromDuration(frame.interval);
+    }
+
+    frame.begin = normalizeBeginEnd(frame.begin, times, 0);
+  }
+
   /**
    * Normalizes a set of times and frames. In each frame, begin/end and relatedTo
    * will be normalized as unix timestamps.
@@ -567,7 +587,7 @@
    * @param  {Object}          options.frames.begin                 When does a frame begin?
    * @param  {Object}          options.frames.end                   When does a frame end?
    */
-  function normalizeFrames (options) {
+  function normalize (options) {
     _.each(options.times, function (time, name) {
       if (_.isDate(time)) {
         options.times[name] = time.getTime();
@@ -575,23 +595,7 @@
     });
 
     _.each(options.frames, function (frame) {
-      _.defaults(frame, {
-        sync: true,
-        begin: {},
-        end: {}
-      });
-
-      normalizeTimestamp(frame, 'relatedTo', options.times);
-
-      /*
-       interval is a duration, in either millisecond form, or LDML string form.
-       We want to normalize this to millisecond form.
-       */
-      if (_.isString(frame.interval)) {
-        frame.interval = millisecondsFromDuration(frame.interval);
-      }
-
-      frame.begin = normalizeBeginEnd(frame.begin, options.times, 0);
+      normalizeFrame(frame, options.times);
     });
 
     _.each(options.frames, function (frame, i) {
@@ -638,7 +642,7 @@
 
     var self = this;
 
-    normalizeFrames(options);
+    normalize(options);
     this._options = options;
 
     this._frames = _.map(options.frames, function (frame) {
@@ -647,7 +651,7 @@
 
     this.logger.info('Kairos Scheduler created with options', JSON.stringify(options));
 
-    //renderLoop.call(this);
+    this._isStarted = false;
     if (options.autoStart) {
       this.start();
     }
@@ -662,6 +666,7 @@
      * @method start
      */
     start: function () {
+      this._isStarted = true;
       _.invoke(this._frames, 'start');
     },
 
@@ -684,6 +689,31 @@
      */
     resume: function () {
       _.invoke(this._frames, 'resume');
+    },
+
+    /**
+     * Adds a frame
+     *
+     * @public
+     * @method addFrame
+     *
+     * @param {Object} frame
+     */
+    addFrame: function (frame) {
+      if (frame.name && _.contains(_.pluck(this._options.frames, 'name'), frame.name)) {
+        return;
+      }
+
+      normalizeFrame(frame, this._options.times);
+      frame.end = normalizeBeginEnd(frame.end, this._options.times, Infinity);
+
+      this._options.frames.push(frame);
+      var newFrame = new KairosFrame(this, frame);
+      this._frames.push(newFrame);
+
+      if (this._isStarted) {
+        newFrame.start();
+      }
     },
 
     /**
