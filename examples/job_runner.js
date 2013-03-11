@@ -25,8 +25,6 @@ var
     }]
   });
 
-// TODO: perhaps KairosScheduler should have an addFrame method
-
 scheduler.subscribe('periodicJob/ticked', function (duration, data) {
   console.info('DOING SOMETHING REPEATEDLY', data.x, data.y);
   data.x += 1;
@@ -35,4 +33,12 @@ scheduler.subscribe('periodicJob/ticked', function (duration, data) {
 
 scheduler.subscribe('oneTimeJob/started', function (duration, data) {
   console.info('DOING A ONE TIME JOB: foo=', data.foo);
+});
+
+scheduler.subscribe('newJob/started', function () {
+  console.info('DOING SOMETHING ELSE');
+});
+
+scheduler.addFrame({
+  name: 'newJob'
 });

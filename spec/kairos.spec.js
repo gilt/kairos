@@ -1274,6 +1274,103 @@ describe('Kairos', function () {
       });
     });
 
+    describe('Add Frame', function () {
+      it('should have an "addFrame" method', function () {
+        var
+          kairos = new KairosScheduler();
+
+        expect((function () { kairos.addFrame({}) })).not.toThrow();
+      });
+
+      it('should add the frame to the (internal) list of frames', function () {
+        var
+          kairos = new KairosScheduler();
+
+        expect(kairos._options.frames.length).toBe(0);
+        expect(kairos._frames.length).toBe(0);
+
+        kairos.addFrame({});
+
+        expect(kairos._options.frames.length).toBe(1);
+        expect(kairos._frames.length).toBe(1);
+      });
+
+      it('should normalize a frame added via addFrame', function () {
+        var
+          kairos = new KairosScheduler({
+            times: {
+              'epoch': 0
+            }
+          });
+
+        kairos.addFrame({
+          begin: {
+            starting: '1s',
+            after: 'epoch'
+          },
+          interval: '5s'
+        });
+
+        expect(kairos._options.frames[0]).toEqual({
+          begin: 1000,
+          end: Infinity,
+          interval: 5000,
+          sync: true
+        });
+      });
+
+      it('should NOT add a named frame if a frame with the same name already exists', function () {
+        var
+          kairos = new KairosScheduler({
+            frames: [{
+              name: 'foo'
+            }]
+          });
+
+        expect(kairos._frames.length).toBe(1);
+
+        kairos.addFrame({
+          name: 'bar'
+        });
+
+        expect(kairos._frames.length).toBe(2);
+
+        kairos.addFrame({
+          name: 'foo'
+        });
+
+        expect(kairos._frames.length).toBe(2);
+      });
+
+      it('should start an added frame if start has already been called', function () {
+        var
+          kairos = new KairosScheduler(),
+          startReceived = false;
+
+        kairos.subscribe('foo/started', function () {
+          startReceived = true;
+        });
+
+        kairos.addFrame({ name: 'foo' });
+
+        expect(startReceived).toBe(true);
+      });
+
+      it('should NOT start an added frame if start has not been called', function () {
+        var
+          kairos = new KairosScheduler({ autoStart: false }),
+          startReceived = false;
+
+        kairos.subscribe('foo/started', function () {
+          startReceived = true;
+        });
+
+        kairos.addFrame({ name: 'foo' });
+
+        expect(startReceived).toBe(false);
+      });
+    });
+
     it('should have a toJSON method on the KairosFrame, to prevent cycles', function () {
       var
         kairos = new KairosScheduler({
