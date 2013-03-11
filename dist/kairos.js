@@ -264,7 +264,7 @@
 
 }(
   'object' === typeof exports && exports || this,
-  'object' === typeof exports && require('underscore') || this._
+  this._ || 'object' === typeof exports && require('underscore')
 ));
 
 /* global _: false */
@@ -776,6 +776,6 @@
 
 }(
   'object' === typeof exports && exports || this,
-  'object' === typeof exports && require('underscore') || this._,
+  this._ || 'object' === typeof exports && require('underscore'),
   'object' === typeof exports && exports.KairosFrame || this.KairosFrame
 ));
