@@ -1,4 +1,4 @@
-/*! kairos v0.0.1 2013-03-11 */
+/*! kairos v0.0.1 2013-03-12 */
 /* global _: false */
 (function(exports, _) {
 
@@ -456,7 +456,7 @@
     if (_.isNumber(obj)) {
       returnValue = obj;
     } else if (_.isDate(obj)) {
-
+      returnValue = obj.getTime();
     } else if (_.isString(obj)) {
       returnValue = times[obj];
 

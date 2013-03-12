@@ -64,7 +64,7 @@ describe('Kairos', function () {
         var
           kairos = new KairosScheduler({
             times: {
-              'test': new Date(0)
+              'test': new Date(1000)
             },
             frames: [{
               begin: {},
@@ -72,7 +72,7 @@ describe('Kairos', function () {
             }]
           });
 
-        expect(kairos._options.frames[0].relatedTo).toBe(0);
+        expect(kairos._options.frames[0].relatedTo).toBe(1000);
       });
 
       it('should convert "relatedTo" Date objects to milliseconds', function () {
@@ -80,11 +80,11 @@ describe('Kairos', function () {
           kairos = new KairosScheduler({
             frames: [{
               begin: {},
-              relatedTo: new Date(0)
+              relatedTo: new Date(1000)
             }]
           });
 
-        expect(kairos._options.frames[0].relatedTo).toBe(0);
+        expect(kairos._options.frames[0].relatedTo).toBe(1000);
       });
 
       it('should default and/or convert the "begin" property to a timestamp (milliseconds) with a default of 0', function () {
@@ -107,18 +107,18 @@ describe('Kairos', function () {
         var
           kairos = new KairosScheduler({
             frames: [{
-              begin: (new Date(0))
+              begin: (new Date(1000))
             }]
           });
 
-        expect(kairos._options.frames[0].begin).toBe(0);
+        expect(kairos._options.frames[0].begin).toBe(1000);
       });
 
       it('should lookup "begin.at" times from the list of "times"', function () {
         var
           kairos = new KairosScheduler({
             times: {
-              'test': new Date(0)
+              'test': new Date(1000)
             },
             frames: [{
               begin: {
@@ -127,7 +127,7 @@ describe('Kairos', function () {
             }]
           });
 
-        expect(kairos._options.frames[0].begin).toBe(0);
+        expect(kairos._options.frames[0].begin).toBe(1000);
       });
 
       it('should convert "begin.at" Date objects to milliseconds', function () {
@@ -135,12 +135,12 @@ describe('Kairos', function () {
           kairos = new KairosScheduler({
             frames: [{
               begin: {
-                at: new Date(0)
+                at: new Date(1000)
               }
             }]
           });
 
-        expect(kairos._options.frames[0].begin).toBe(0);
+        expect(kairos._options.frames[0].begin).toBe(1000);
       });
 
       it('should convert a "starting" + "after" begin time to milliseconds', function () {
@@ -460,7 +460,7 @@ describe('Kairos', function () {
         var
           kairos = new KairosScheduler({
             times: {
-              'foo': new Date(0)
+              'foo': new Date(1000)
             },
             frames: [{
               begin: 'at foo'
@@ -469,8 +469,8 @@ describe('Kairos', function () {
             }]
           });
 
-        expect(kairos._options.frames[0].begin).toBe(0);
-        expect(kairos._options.frames[1].begin).toBe(0);
+        expect(kairos._options.frames[0].begin).toBe(1000);
+        expect(kairos._options.frames[1].begin).toBe(1000);
       });
 
       it('should use a duration of 0 if it cannot parse a natural language duration', function () {
