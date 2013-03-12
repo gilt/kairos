@@ -31,13 +31,14 @@
             now = (new Date()).getTime(),
             tzOffset = (4 * 60 * 60 * 1000), // ET (GMT-5 (usually (currently 4) -- TZs are HARD))
             day = (24 * 60 * 60 * 1000),
-            midnight = (now + day - ((now + day) % day)) + tzOffset;
+            midnight = (now + day - ((now + day) % day)) + tzOffset,
+            noon = midnight - day / 2;
 
-          if (12 < Math.floor((midnight % day) / (60 * 60 * 1000))) {
-            return midnight + day / 2;
-          } else {
-            return midnight - day / 2;
+          if (noon < now) {
+            noon = midnight + day / 2;
           }
+
+          return noon;
         }())
       },
       frames: [{
