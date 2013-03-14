@@ -1,4 +1,4 @@
-/*! kairos v0.0.1 2013-03-12 */
+/*! kairos v0.2.0 2013-03-14 */
 /* global _: false */
 (function(exports, _) {
 
@@ -43,6 +43,7 @@
         now,
         message = [
           (this._relatedTime - (new Date()).getTime()) || 0,
+          this._relatedTime || 0,
           this._data
         ];
 
@@ -77,6 +78,7 @@
       var
         message = [
           (this._relatedTime - (new Date()).getTime()) || 0,
+          this._relatedTime || 0,
           this._data
         ];
 
@@ -105,6 +107,7 @@
       var
         message = [
           (this._relatedTime - (new Date()).getTime()) || 0,
+          this._relatedTime || 0,
           this._data
         ];
 
@@ -115,7 +118,6 @@
         this._parent.publish(this._name +  '/started', message);
       }
 
-      // QUESTION: should this be called immediately, or on a timeout?
       if (this._tickInterval) {
         tick.call(this);
       }
