@@ -1,5 +1,12 @@
 /* global KairosScheduler: false, describe: false, xdescribe: false, it: false, xit: false, expect: false, waitsFor: false, runs: false */
 describe('Kairos', function () {
+  // NOTE:
+  //   Several of these tests are to ensure that things happen at the correct
+  //   time. Unfortunately, setTimeout is intrinsically inaccurate, so a certain
+  //   amount of imprecision is unavoidable.  We've taken steps to minimize
+  //   the imprecision, but, YMMV.
+  var TIMING_PRECISION = 15;
+
   describe('Scheduler', function () {
     describe('Constructor', function () {
       it('should privately expose its options as "_options"', function () {
@@ -507,24 +514,118 @@ describe('Kairos', function () {
         var
           kairos = new KairosScheduler({
             times: {
-              'test': (new Date()).getTime() + 60000
+              'now': new Date()
             },
             frames: [{
-              begin: {
-                at: 0
-              }
             }, {
               begin: {
-                starting: '59s',
-                before: 'test'
+                starting: 50,
+                after: 'now'
+              }
+            }]
+          }),
+          received = false
+
+        kairos.subscribe('frameStarted', function () {
+          received = true;
+        });
+
+        waitsFor(function () {
+          return received;
+        });
+
+        runs(function () {
+          expect(received).toBe(true);
+        });
+      });
+
+      it('should send duration with all frame notifications', function () {
+        var
+          kairos = new KairosScheduler({
+            times: {
+              'now': new Date()
+            },
+            frames: [{
+            }, {
+              begin: {
+                starting: 50,
+                after: 'now'
               },
-              data: {}
+              relatedTo: 'now'
+            }]
+          }),
+          received = false,
+          durationReceived = null;
+
+        kairos.subscribe('frameStarted', function (duration) {
+          received = true;
+          durationReceived = duration;
+        });
+
+        waitsFor(function () {
+          return received;
+        });
+
+        runs(function () {
+          expect(durationReceived).toBeLessThan(50 + TIMING_PRECISION);
+        });
+      });
+
+      it('should send relatedTime with all frame notifications', function () {
+        var
+          now = new Date().getTime(),
+          kairos = new KairosScheduler({
+            times: {
+              'now': now
+            },
+            frames: [{
+            }, {
+              begin: {
+                starting: 50,
+                after: 'now'
+              },
+              relatedTo: 'now'
+            }]
+          }),
+          received = false,
+          momentReceived = null;
+
+        kairos.subscribe('frameStarted', function (duration, moment) {
+          received = true;
+          momentReceived = moment;
+        });
+
+        waitsFor(function () {
+          return received;
+        });
+
+        runs(function () {
+          expect(momentReceived).toBe(now);
+        });
+      });
+
+      it('should send data with all frame notifications', function () {
+        var
+          now = new Date().getTime(),
+          kairos = new KairosScheduler({
+            times: {
+              'now': now
+            },
+            frames: [{
+            }, {
+              begin: {
+                starting: 50,
+                after: 'now'
+              },
+              data: {
+                foo: 'bar'
+              }
             }]
           }),
           received = false,
           dataReceived = null;
 
-        kairos.subscribe('frameStarted', function (duration, data) {
+        kairos.subscribe('frameStarted', function (duration, moment, data) {
           received = true;
           dataReceived = data;
         });
@@ -534,7 +635,7 @@ describe('Kairos', function () {
         });
 
         runs(function () {
-          expect(dataReceived).toEqual({});
+          expect(dataReceived).toEqual({ foo: 'bar' });
         });
       });
 
@@ -560,7 +661,7 @@ describe('Kairos', function () {
           received = false,
           dataReceived = null;
 
-        kairos.subscribe('test/started', function (duration, data) {
+        kairos.subscribe('test/started', function (duration, moment, data) {
           received = true;
           dataReceived = data;
         });
@@ -591,7 +692,7 @@ describe('Kairos', function () {
           received = false,
           durationReceived = null;
 
-        kairos.subscribe('frameTicked', function (duration, data) {
+        kairos.subscribe('frameTicked', function (duration, moment, data) {
           received = true;
           durationReceived = duration;
         });
@@ -623,7 +724,7 @@ describe('Kairos', function () {
           received = false,
           durationReceived = null;
 
-        kairos.subscribe('test/ticked', function (duration, data) {
+        kairos.subscribe('test/ticked', function (duration, moment, data) {
           received = true;
           durationReceived = duration;
         });
@@ -653,7 +754,7 @@ describe('Kairos', function () {
           received = false,
           durationReceived = null;
 
-        kairos.subscribe('frameTicked', function (duration, data) {
+        kairos.subscribe('frameTicked', function (duration, moment, data) {
           received = true;
           durationReceived = duration;
         });
@@ -684,7 +785,7 @@ describe('Kairos', function () {
           received = false,
           dataReceived = null;
 
-        kairos.subscribe('frameEnded', function (duration, data) {
+        kairos.subscribe('frameEnded', function (duration, moment, data) {
           received = true;
           dataReceived = data;
         });
@@ -716,7 +817,7 @@ describe('Kairos', function () {
           received = false,
           dataReceived = null;
 
-        kairos.subscribe('test/ended', function (duration, data) {
+        kairos.subscribe('test/ended', function (duration, moment, data) {
           received = true;
           dataReceived = data;
         });
@@ -806,13 +907,6 @@ describe('Kairos', function () {
           expect(frameCount).toEqual(3);
         });
       });
-
-      // NOTE:
-      //   These next 2 tests are to ensure that things happen at the correct time
-      //   Unfortunately, setTimeout is intrinsically inaccurate, so a certain
-      //   amount of imprecision is unavoidable.  We've taken steps to minimize
-      //   the imprecision, but, YMMV.
-      var TIMING_PRECISION = 15;
 
       it('should start each frame on time (BRITTLE)', function () {
         var
@@ -909,7 +1003,7 @@ describe('Kairos', function () {
           ticksReceived = 0,
           frameChanges = 0;
 
-        kairos.subscribe('frameTicked', function (duration, data) {
+        kairos.subscribe('frameTicked', function (duration, moment, data) {
           if (0 !== duration) { // ignore ticks from the non-interval frames
             ticksReceived += 1;
           }
