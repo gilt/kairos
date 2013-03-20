@@ -32,8 +32,8 @@ a calendar, job runner, or even part of a game engine.
       times: {
         'epoch': 0,
         'now': (new Date()),
-        'lunchTime': 1362589200000,
-        'dinnerTime': 1362616200000
+        'lunch': 1362589200000,
+        'dinner': 1362616200000
       },
       frames: [
       
@@ -89,12 +89,12 @@ a calendar, job runner, or even part of a game engine.
       ]
     });
     
-    myScheduler.subscribe('frameStarted/lateMorning', renderMenu);
-    myScheduler.subscribe('frameStarted/earlyAfternoon', renderMenu);
-    myScheduler.subscribe('frameEnded/earlyAfternoon', destroyMenu);
-    myScheduler.subscribe('frameTicked/lateMorning', renderLunchCountdown);
-    myScheduler.subscribe('frameTicked/earlyAfternoon', renderSiestaClock);
-    
+    myScheduler.subscribe('lateMorning/started', renderMenu);
+    myScheduler.subscribe('earlyAfternoon/started', renderMenu);
+    myScheduler.subscribe('earlyAfternoon/ended', destroyMenu);
+    myScheduler.subscribe('lateMorning/ticked', renderLunchCountdown);
+    myScheduler.subscribe('earlyAfternoon/ticked', renderSiestaClock);
+
     $('.pauseButton').toggle(
       _.bind(KairosScheduler.prototype.pause, myScheduler), 
       _.bind(KairosScheduler.prototype.resume, myScheduler)
@@ -172,13 +172,13 @@ Creates a new scheduler using the times and frames passed in.
     - This field can be a number, date, or named time
   - Frames have an optional name field, which is used for frame specific notifications (below)
   - Frames have an optional data field, which is passed to all notifications.
-  - Frames have an optional interval field, which if provided, will cause tick
-    notifications periodically while the frame is active.
+  - Frames have an optional interval field, in milliseconds, which if provided,
+    will cause tick notifications periodically while the frame is active.
   - Frames have a sync field, which is defaulted to true. If syncing is enabled,
     ticks will be synchronized to the users clock, ex:
     
     If interval is 1000, and we start at 0 (hop in that timemachine), and syncing
-    is turned off, events might fire at the following timestamps:
+    is turned off, events might fire at the following timestamps (ms):
 
         0, 1015, 2035, 3205, 4310, 5425, 6445
     As you can see, we quickly wind up drifting off target.
@@ -205,7 +205,7 @@ Publishes a notification. Intended for internal use.
 
 Subscribes to a published notification.
 
-    myKairosScheduler.subscribe('foo', function (fooData1, fooData2) {
+    myKairosScheduler.subscribe('frameStarted', function (duration, moment, data) {
       …
     });
     
@@ -215,11 +215,12 @@ Subscribes to a published notification.
     - frameEnded
     - frameTicked
   - And three 'frame specific' notifications:
-    - frameStarted/{frameName}
-    - frameEnded/{frameName}
-    - frameTicked/{frameName}
-- All six types of notification get the same 2 arguments passed in:
+    - {frameName}/started
+    - {frameName}/ended
+    - {frameName}/ticked
+- All six types of notification get the same 3 arguments passed in:
   - duration, since/until the 'relatedTo' time
+  - moment, the 'relatedTo' time
   - data, from the original frame configuration
     
 ### KairosScheduler::start()
@@ -244,7 +245,7 @@ Resumed paused tick notifications.
 ## Contributing
 
 We use grunt for running tests and such, so, if you want to contribute, you
-should to install grunt's cli `sudo npm install -g grunt-cli`. Once you have
+should to install grunts cli `sudo npm install -g grunt-cli`. Once you have
 done so, you can run any of our grunt tasks: `grunt watch`, `grunt test`,
 `grunt build`, `grunt release:(major or minor or patch)`
 
