@@ -7,8 +7,317 @@ describe('Kairos', function () {
   //   the imprecision, but, YMMV.
   var TIMING_PRECISION = 15;
 
-  describe('Scheduler', function () {
+  describe('TimeFrame', function () {
     describe('Constructor', function () {
+      it('should construct with no arguments');
+      
+      it('should construct with only a name argument');
+      
+      it('should construct with an options argument');
+      
+      it('should construct with both a name and an options argument');
+
+      it('should construct with a name in the options argument');
+    });
+
+    describe('API', function () {
+      it('should have a start method');
+
+      it('should have a stop method');
+
+      it('should have a pause method');
+
+      it('should have a resume method');
+
+      it('should have a subscribe method');
+
+      it('should have a publish method');
+
+      it('should have an unsubscribe method');
+
+      it('should have a toJSON method');
+
+      it('should have a toString method');
+
+      it('should have a logger');
+
+      it('should have a clone method');
+    });
+
+    describe('Chaining', function () {
+      it('should make the start method chainable');
+
+      it('should make the stop method chainable');
+
+      it('should make the pause method chainable');
+
+      it('should make the resume method chainable');
+
+      it('should make the subscribe method chainable');
+
+      it('should make the publish method chainable');
+
+      it('should make the unsubscribe method chainable');
+    });
+
+    describe('Accessors', function () {
+      it('should expose a getter for the original beginsAt parameter');
+
+      it('should expose a getter for the normalized beginsAt parameter');
+
+      it('should expose a setter for the beginsAt parameter');
+
+      it('should make the beginsAt setter chainable');
+
+      it('should expose a getter for the original endsAt parameter');
+
+      it('should expose a getter for the normalized endsAt parameter');
+
+      it('should expose a setter for the endsAt parameter');
+
+      it('should make the endsAt setter chainable');
+
+      it('should expose a getter for the original ticksEvery parameter');
+
+      it('should expose a getter for the normalized ticksEvery parameter');
+
+      it('should expose a setter for the ticksEvery parameter');
+
+      it('should make the ticksEvery setter chainable');
+
+      it('should expose a getter for the original relativeTo parameter');
+
+      it('should expose a getter for the normalized relativeTo parameter');
+
+      it('should expose a setter for the relativeTo parameter');
+
+      it('should make the relativeTo setter chainable');
+
+      it('should expose a getter for the original syncTo parameter');
+
+      it('should expose a getter for the normalized syncTo parameter');
+
+      it('should expose a setter for the syncTo parameter');
+
+      it('should make the syncTo setter chainable');
+
+      it('should expose a getter for the original named times');
+
+      it('should expose a getter for the normalized named times');
+
+      it('should expose a setter for the named times');
+
+      it('should make the named times setter chainable');
+
+      it('should expose a getter for the name parameter');
+
+      it('should expose a getter for the data parameter');
+
+      it('should expose a setter for the data parameter');
+
+      it('should make the data setter chainable');
+
+      it('should expose a getter for isStarted');
+
+      it('should expose a getter for isEnded');
+
+      it('should expose a getter for isMuted');
+
+      it('should expose a getter for isStopped');
+
+      it('should expose a getter for the duration relative to the relativeTo time');
+
+      it('should make all setters immutable once start has been called');
+    });
+
+    describe('Defaults', function () {
+      it('should default named times to epoch(0) + now(new Date()) + never(Infinity)');
+
+      it('should default beginsAt to epoch');
+
+      it('should default endsAt to never');
+
+      it('should default relativeTo to beginsAt');
+    });
+
+    describe('Normalization', function () {
+      it('should normalize beginsAt');
+
+      it('should normalize endsAt');
+
+      it('should normalize ticksEvery');
+
+      it('should normalize relativeTo');
+
+      it('should normalize syncTo');
+
+      it('should normalize named times');
+
+      it('should not replace extant named times');
+
+      it('should log an error if you attempt to set an extant named time');
+    });
+
+    describe('Notifications', function () {
+      it('should publish when the frame starts');
+
+      it('should publish when the frame ends');
+
+      it('should publish when the frame ticks');
+
+      it('should publish when the frame pauses');
+
+      it('should publish when the frame resumes');
+
+      it('should provide the KairosTimeFrame instance to subscribers');
+    });
+
+    describe('Execution', function () {
+      it('should start on time (BRITTLE)');
+
+      it('should end on time (BRITTLE)');
+
+      it('should stop ticking when the frame ends');
+
+      it('should be able to sync to an arbitrary interval');
+
+      it('should, by default, sync to the millisecond portion of the start time, adjusted by the millisecond portion of the ticksEvery duration');
+    });
+
+    describe('Control', function () {
+      it('should not fire any events until start has been called');
+
+      it('should not fire any events if stop has been called');
+
+      it('should not start if we are already started');
+
+      it('should not fire any "ticked" events if muted');
+
+      it('should still fire "started" events when muted');
+
+      it('should still fire "ended" events when muted');
+
+      it('should not fire missed "ticked" events when unmuted');
+
+      it('should start firing new "ticked" events when unmuted');
+
+      it('should not unmute if not muted');
+
+      it('should not unmute if not started');
+
+      it('should not unmute if ended');
+
+      it('should not unmute if stopped');
+    });
+
+    describe('Misc', function () {
+      it('should reset state(isStarted/isEnded/isStopped/isMuted) when cloned');
+    });
+  });
+  
+  describe('Container', function () {
+    describe('Constructor', function () {
+      it('should construct with a array of KairosTimeFrames');
+
+      it('should construct with an array of (KairosTimeFrame options) hashes');
+
+      it('should construct with a mixed array of KairosTimeFrames and hashes');
+
+      it('should enforce uniqueness of KairosTimeFrames names (if name is present)');
+    });
+
+    describe('API', function () {
+      it('should have a start method');
+
+      it('should have a stop method');
+
+      it('should have a pause method');
+
+      it('should have a resume method');
+
+      it('should have a subscribe method');
+
+      it('should have a publish method');
+
+      it('should have an unsubscribe method');
+
+      it('should have a toJSON method');
+
+      it('should have a toString method');
+
+      it('should have a logger');
+
+      it('should have an addFrame method');
+    });
+
+    describe('Chaining', function () {
+      it('should make the start method chainable');
+
+      it('should make the stop method chainable');
+
+      it('should make the pause method chainable');
+
+      it('should make the resume method chainable');
+
+      it('should make the subscribe method chainable');
+
+      it('should make the publish method chainable');
+
+      it('should make the unsubscribe method chainable');
+
+      it('should make the addFrame method chainable');
+    });
+
+    describe('Accessors', function () {
+      it('should expose a getter for the original named times');
+
+      it('should expose a getter for the normalized named times');
+
+      it('should expose a setter for the named times');
+
+      it('should make the named times setter chainable');
+
+    });
+
+    describe('Defaults', function () {
+      it('should default named times to the unique aggregate of all named times in all KairosTimeFrames');
+    });
+
+    describe('Normalization', function () {
+      it('should normalize named times');
+
+      it('should not replace extant named times');
+    });
+
+    describe('Notifications', function () {
+      it('should publish when any KairosTimeFrames starts');
+
+      it('should publish when any KairosTimeFrames ends');
+
+      it('should publish when any KairosTimeFrames ticks');
+
+      it('should publish when any KairosTimeFrames pauses');
+
+      it('should publish when any KairosTimeFrames resumes');
+
+      it('should republish KairosTimeFrames specific publishes');
+    });
+
+    describe('Control', function () {
+      it('should invoke start on all KairosTimeFrames on start');
+
+      it('should invoke stop on all KairosTimeFrames on stop');
+
+      it('should invoke pause on all KairosTimeFrames on pause');
+
+      it('should invoke resume on all KairosTimeFrames on resume');
+    });
+  });
+  
+  // OLD SPECS:
+
+  xdescribe('Scheduler', function () {
+    xdescribe('Constructor', function () {
       it('should privately expose its options as "_options"', function () {
         var
           kairos = new KairosScheduler();
@@ -395,7 +704,7 @@ describe('Kairos', function () {
       });
     });
 
-    describe('Natural Language', function () {
+    xdescribe('Natural Language', function () {
       it('should parse "begin" strings of the form "starting 2s after foo" with variations', function () {
         var
           kairos = new KairosScheduler({
@@ -495,7 +804,7 @@ describe('Kairos', function () {
       });
     });
 
-    describe('Notifications', function () {
+    xdescribe('Notifications', function () {
       it('should have a pubsub system', function () {
         var
           kairos = new KairosScheduler({}),
@@ -832,7 +1141,7 @@ describe('Kairos', function () {
       });
     });
 
-    describe('Scheduling', function () {
+    xdescribe('Scheduling', function () {
       it('should be able to run an arbitrary number of frames', function () {
         var
           kairos = new KairosScheduler({
@@ -1052,7 +1361,7 @@ describe('Kairos', function () {
       });
     });
 
-    describe('Start/Pause/Resume', function () {
+    xdescribe('Start/Pause/Resume', function () {
       it('should have a start method', function () {
         var
           kairos = new KairosScheduler({
@@ -1368,7 +1677,7 @@ describe('Kairos', function () {
       });
     });
 
-    describe('Add Frame', function () {
+    xdescribe('Add Frame', function () {
       it('should have an "addFrame" method', function () {
         var
           kairos = new KairosScheduler();
@@ -1465,7 +1774,7 @@ describe('Kairos', function () {
       });
     });
 
-    it('should have a toJSON method on the KairosFrame, to prevent cycles', function () {
+    xit('should have a toJSON method on the KairosFrame, to prevent cycles', function () {
       var
         kairos = new KairosScheduler({
           frames: [{}]
