@@ -4,10 +4,6 @@ module.exports = (grunt) ->
     meta:
       src:   'lib/**/*.js'
       specs: 'spec/**/*.spec.js'
-    watch:
-      test:
-        files: ['<%= meta.src %>', '<%= meta.specs %>']
-        tasks: 'test'
     jshint:
       src: ['<%= meta.src %>', '<%= meta.specs %>']
       options:
@@ -24,24 +20,20 @@ module.exports = (grunt) ->
         sub:       false
         browser:   true
         node:      true
-    jasmine:
-      kairos:
-        src: '<%= meta.src %>',
-        options:
-          specs:  '<%= meta.specs %>'
-          vendor: ['node_modules/underscore/underscore.js']
-    testacular:
-      kairos:
-        options:
-          configFile: 'testacular.conf.js'
-          keepalive: true
-          preprocessors:
-            '**/lib/kairos*.js': 'coverage'
-          browsers: [
-            'Firefox'
-          ]
-          reporters: ['progress', 'coverage']
-          # files: [] # Can't do this here, due to lack of JASMINE and JASMINE_ADAPTER global constants
+    karma:
+      options:
+        configFile: 'karma.conf.js'
+        preprocessors:
+          '**/lib/kairos*.js': 'coverage'
+        browsers: [
+          'Firefox'
+        ]
+        reporters: ['progress', 'coverage']
+        # files: [] # Can't do this here, due to lack of JASMINE and JASMINE_ADAPTER global constants
+        # if you add a dependency, it needs to be added to the files list in karma.conf.js
+      specs: {}
+      once:
+        singleRun: true
     clean:
       build: ['dist', 'coverage', 'test-results.xml']
     concat:
@@ -75,10 +67,9 @@ module.exports = (grunt) ->
   grunt.loadNpmTasks 'grunt-contrib-jasmine'
   grunt.loadNpmTasks 'grunt-contrib-jshint'
   grunt.loadNpmTasks 'grunt-contrib-uglify'
-  grunt.loadNpmTasks 'grunt-contrib-watch'
+  grunt.loadNpmTasks 'grunt-karma'
   grunt.loadNpmTasks 'grunt-release'
-  grunt.loadNpmTasks 'grunt-testacular'
 
-  grunt.registerTask 'default', ['watch']
+  grunt.registerTask 'default', ['karma:specs']
   grunt.registerTask 'build', ['clean:build', 'concat', 'uglify']
-  grunt.registerTask 'test', ['jshint', 'jasmine']
+  grunt.registerTask 'test', ['jshint', 'karma:once']
