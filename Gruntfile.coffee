@@ -42,8 +42,8 @@ module.exports = (grunt) ->
         banner: '/*! <%= pkg.name %> v<%= pkg.version %> <%= grunt.template.today("yyyy-mm-dd") %> */\n'
       build:
         src: [
-          'lib/kairos_frame.js'
-          'lib/kairos_scheduler.js'
+          'lib/kairos_time_frame.js'
+          'lib/kairos_collection.js'
         ]
         dest: 'dist/<%= pkg.name %>.js'
     uglify:
@@ -71,5 +71,5 @@ module.exports = (grunt) ->
   grunt.loadNpmTasks 'grunt-release'
 
   grunt.registerTask 'default', ['karma:specs']
-  grunt.registerTask 'build', ['clean:build', 'concat', 'uglify']
+  grunt.registerTask 'build', ['test', 'clean:build', 'concat', 'uglify']
   grunt.registerTask 'test', ['jshint', 'karma:once']
