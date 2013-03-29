@@ -24,14 +24,6 @@
     <script src="../dist/kairos.js"></script>
     <script>
       $(function () {
-        var clockScheduler = new KairosScheduler({
-          frames: [{
-            interval: '1s',
-            name: 'clock',
-            relatedTo: 0
-          }]
-        });
-
         function fill2 (txt) {
           if (2 > txt.length) {
             return '0' + txt;
@@ -39,11 +31,14 @@
           return txt;
         }
 
-        // Okay, so, this is overkill, though it does give us syncing, which is NICE for a clock.
-        clockScheduler.subscribe('clock/ticked', function (duration, data) {
-          var date = new Date(-duration); // need a date object to do the timezone + leap * conversions
+        var timeFrame = new KairosTimeFrame('clock', {
+          ticksEvery: '1s',
+          relativeTo: 'epoch',
+          syncTo: '1s'
+        }).subscribe('ticked', function (frame) {
+          var date = new Date(-frame.getRelativeDuration());
           $('.clock').text(date.getHours() + ':' + fill2(date.getMinutes().toString()) + ':' + fill2(date.getSeconds().toString()));
-        });
+        }).start();
       });
     </script>
   </body>

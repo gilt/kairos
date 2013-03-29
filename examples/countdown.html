@@ -24,31 +24,6 @@
 <script src="../dist/kairos.js"></script>
 <script>
   $(function () {
-    var clockScheduler = new KairosScheduler({
-      times: {
-        noon: (function () {
-          var
-            now = (new Date()).getTime(),
-            tzOffset = (4 * 60 * 60 * 1000), // ET (GMT-5 (usually (currently 4) -- TZs are HARD))
-            day = (24 * 60 * 60 * 1000),
-            midnight = (now + day - ((now + day) % day)) + tzOffset,
-            noon = midnight - day / 2;
-
-          if (noon < now) {
-            noon = midnight + day / 2;
-          }
-
-          return noon;
-        }())
-      },
-      frames: [{
-        end: 'noon',
-        interval: '1s',
-        name: 'countdown',
-        relatedTo: 'noon'
-      }]
-    });
-
     function fill2 (txt) {
       if (2 > txt.length) {
         return '0' + txt;
@@ -56,14 +31,36 @@
       return txt;
     }
 
-    clockScheduler.subscribe('countdown/ticked', function (duration, data) {
+    var timeFrame = new KairosTimeFrame('countdown', {
+      endsAt: 'noon',
+      ticksEvery: '1s',
+      relativeTo: 'noon'
+    }).extendNamedTimes({
+      noon: (function () {
+        var
+          now = (new Date()).getTime(),
+          tzOffset = (5 * 60 * 60 * 1000), // ET (GMT-5 (usually -- TZs are HARD))
+          day = (24 * 60 * 60 * 1000),
+          midnight = (now + day - ((now + day) % day)) + tzOffset,
+          noon = midnight - day / 2;
+
+        if (noon < now) {
+          noon = midnight + day / 2;
+        }
+
+        return noon;
+      }())
+    }).subscribe('ticked', function (frame) {
       var
+        duration = frame.getRelativeDuration(),
         hours = Math.floor(duration / (60 * 60 * 1000)),
         minutes = Math.floor((duration % (60 * 60 * 1000)) / (60 * 1000)),
         seconds = Math.round((duration % (60 * 1000)) / 1000);
 
       $('.clock').text(hours + ':' + fill2(minutes.toString()) + ':' + fill2(seconds));
-    });
+    }).start();
+
+    console.log(timeFrame.toJson())
   });
 </script>
 </body>
