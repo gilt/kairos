@@ -138,7 +138,7 @@ describe('Kairos', function () {
         endsAt: '2000',
         ticksEvery: '3000',
         relativeTo: '4000',
-        syncTo: '5000',
+        syncsTo: '5000',
         namedTimes: {
           foo: '6000'
         },
@@ -231,25 +231,25 @@ describe('Kairos', function () {
         expect(timeFrame.setRelativeTo(4500)).toBe(timeFrame);
       });
 
-      it('should expose a getter for the (normalized) syncTo parameter', function () {
-        expect(timeFrame.getSyncTo).toEqual(jasmine.any(Function));
-        expect(timeFrame.getSyncTo()).toBe(5000);
+      it('should expose a getter for the (normalized) syncsTo parameter', function () {
+        expect(timeFrame.getSyncsTo).toEqual(jasmine.any(Function));
+        expect(timeFrame.getSyncsTo()).toBe(5000);
       });
 
-      it('should expose a getter for the original syncTo parameter', function () {
-        expect(timeFrame.getSyncTo({ originalValue: true })).toBe('5000');
+      it('should expose a getter for the original syncsTo parameter', function () {
+        expect(timeFrame.getSyncsTo({ originalValue: true })).toBe('5000');
       });
 
-      it('should expose a setter for the syncTo parameter', function () {
-        expect(timeFrame.setSyncTo).toEqual(jasmine.any(Function));
+      it('should expose a setter for the syncsTo parameter', function () {
+        expect(timeFrame.setSyncsTo).toEqual(jasmine.any(Function));
       });
 
-      it('should throw an error if you call the syncTo setter with no value', function () {
-        expect(timeFrame.setSyncTo).toThrow();
+      it('should throw an error if you call the syncsTo setter with no value', function () {
+        expect(timeFrame.setSyncsTo).toThrow();
       });
 
-      it('should make the syncTo setter chainable', function () {
-        expect(timeFrame.setSyncTo(5500)).toBe(timeFrame);
+      it('should make the syncsTo setter chainable', function () {
+        expect(timeFrame.setSyncsTo(5500)).toBe(timeFrame);
       });
 
       it('should expose a getter for the (normalized) named times', function () {
@@ -336,7 +336,7 @@ describe('Kairos', function () {
         expect(function () { timeFrame.setEndsAt(3000); }).toThrow();
         expect(function () { timeFrame.setTicksEvery(4000); }).toThrow();
         expect(function () { timeFrame.setRelativeTo(5000); }).toThrow();
-        expect(function () { timeFrame.setSyncTo(6000); }).toThrow();
+        expect(function () { timeFrame.setSyncsTo(6000); }).toThrow();
         expect(function () { timeFrame.extendNamedTimes({ foo: 7000 }); }).toThrow();
         expect(function () { timeFrame.setData({ foo: 'baz' }); }).toThrow();
       });
@@ -346,7 +346,7 @@ describe('Kairos', function () {
         expect(timeFrame.getEndsAt()).not.toBe(3000);
         expect(timeFrame.getTicksEvery()).not.toBe(4000);
         expect(timeFrame.getRelativeTo()).not.toBe(5000);
-        expect(timeFrame.getSyncTo()).not.toBe(6000);
+        expect(timeFrame.getSyncsTo()).not.toBe(6000);
         expect(timeFrame.getNamedTimes()).not.toEqual({ foo: 7000 });
         expect(timeFrame.getData()).not.toEqual({ foo: 'baz' });
       });
@@ -497,16 +497,16 @@ describe('Kairos', function () {
         // Skipping additional tests since horo will do so exhaustively
       });
 
-      it('should normalize syncTo', function () {
+      it('should normalize syncsTo', function () {
         var timeFrame = new KairosTimeFrame({
-          syncTo: '1000'
+          syncsTo: '1000'
         });
 
-        expect(timeFrame.getSyncTo()).toBe(1000);
+        expect(timeFrame.getSyncsTo()).toBe(1000);
 
-        timeFrame.setSyncTo('1 hour');
+        timeFrame.setSyncsTo('1 hour');
 
-        expect(timeFrame.getSyncTo()).toBe(60 * 60 * 1000);
+        expect(timeFrame.getSyncsTo()).toBe(60 * 60 * 1000);
 
         // Skipping additional tests since horo will do so exhaustively
       });
@@ -759,7 +759,7 @@ describe('Kairos', function () {
 
         new KairosTimeFrame({
           ticksEvery: 1000,
-          syncTo: 500
+          syncsTo: 500
         }).start()
           .subscribe('ticked', function () {
             tickTime = (new Date()).getTime();

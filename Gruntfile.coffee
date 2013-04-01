@@ -42,6 +42,7 @@ module.exports = (grunt) ->
         banner: '/*! <%= pkg.name %> v<%= pkg.version %> <%= grunt.template.today("yyyy-mm-dd") %> */\n'
       build:
         src: [
+          'lib/kairos_errors.js'
           'lib/kairos_time_frame.js'
           'lib/kairos_collection.js'
         ]

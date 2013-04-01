@@ -16,6 +16,7 @@ files = [
   JASMINE,
   JASMINE_ADAPTER,
   'node_modules/underscore/underscore.js',
+  'lib/kairos_errors.js',
   'lib/kairos_time_frame.js',
   'lib/kairos_collection.js',
   'spec/**/*.spec.js'
