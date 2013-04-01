@@ -1,8 +1,10 @@
 # Kairos (TODO: BUILD STATUS ICON)
 
-Kairos is a time frame scheduler. A KairosTimeFrame instance has both beginning
-and ending times, and can optionally tick at a given interval. Notifications
-will be published when frames start, end, and tick.
+Kairos is a time frame scheduler.
+
+A KairosTimeFrame instance is bounded by both
+beginning and ending times, and can optionally tick at a given interval.
+Notifications are published when frames begin, end, and tick.
 
 A KairosContainer object can roll up several frames, allowing them to be
 stopped, started, and modified simulatenously.
@@ -21,7 +23,7 @@ multiple KairosTimeFrame instances helps us to do this.
 - Natural language scheduling syntax
 - Scheduling relative to named times
 - Calculates durations relative to named times
-- Mute and unmute ticks
+- Mute and unmute tick events
 - Exhaustively tested
 
 ## Usage
@@ -32,20 +34,21 @@ Starting and stopping the frame can be done at any time.
 ### A Note About Begin, End, Start, and Stop
 
 A time frame has a begin time and an end time, occupying a unique period in
-history. Starting and stopping the frame can be done anytime.
+history. Starting and stopping the frame can be done anytime, though each frame
+can only be stopped and started once.
 
-If you start the frame before its beginning and let it run, it will publish
-events when it begins and ends. If you start the frame between its beginning
-and ending bounds and let it run, it will publish a begin event immediately
-and an end event when it ends. If you start the frame after its beginning
-bound and stop it before its ending bound, it will fire a begin event
-immediately and no end event. If you start the frame after it is "over", it
-will not fire any events.
+If you start the frame before its beginning time and let it run, it will
+publish events when it begins and ends. If you start the frame sometime between
+its beginning and ending bounds and let it run, it will publish a begin event
+immediately and an end event when it ends. If you start the frame after its
+beginning bound and stop it before its ending bound, it will fire a begin event
+immediately and no end event. Finally, if you start the frame after it is
+"over", it will not fire any events.
 
 ### Simple Trivial Example
 
-Here's a simple example, using the chaining API and counting down the time till
-lunch:
+Here's a simple example, using the chaining API and counting down the time
+until lunch:
 
     // This frame begins when the page loads, and ends two minutes before a
     // named time 'lunch', which must either be provided to the frame or to
@@ -88,6 +91,9 @@ lunch:
       })
       .start();
 
+    // This will mute the tick events published by the two frames that have a
+    // tick interval specified, by calling mute() on all of the frames in the
+    // collection.
     $('.stop-reminding-me-already').toggle(
       function () {
         frameContainer.mute();
@@ -97,11 +103,11 @@ lunch:
       }
     );
 
-### Real-Life Use Case Example
+### Real-Life Example
 
 At Gilt, we wrap Kairos with our own logic to prevent overlapping time frames
-and provide formatting. This example shows what we use Kairos for, but not how
-we implement it in our own codebase.
+and provide formatting. So, the following example shows what we use Kairos for,
+but not how we actually implement it in our own codebase.
 
     // Creates several frames, with explicit non-overlapping begin and end
     // times. The ones that tick will be used for countdown clocks.
@@ -267,7 +273,7 @@ Interpolation can be used instead of using exact times.
     }).start();
 
 Interpolation can be a percentage string, or a floating point number ('0.4
-between bar and baz').
+between bar and baz'). This example will have an end time of 6pm.
 
 ### Ticking
 
@@ -293,12 +299,13 @@ The ticksEvery field can be in milliseconds, LDML, or natural language syntax,
 and the relativeTo field can be a named time, the beginsAt or endsAt times, or
 a Date, Unix timestamp, or Date-constructable string.
 
-If relativeTo is not provided, its default is the beginsAt time.
+If relativeTo is not provided, its default is the beginsAt time, since the
+default endsAt time is Infinity, which is hard to count from.
 
 ### Muting
 
 The frame can be muted or unmuted, which toggles whether tick events are
-published. If muted, the start and end events for the timeframe will be
+published. If muted, the start and end events for the timeframe will still be
 published, but ticks will not.
 
     tf = new KairosTimeFrame('foo', {
@@ -308,8 +315,8 @@ published, but ticks will not.
       relativeTo: 'endsAt'
     }).start();
 
-If start() occurs before the frame beginsAt time, a begin event will be
-published. Tick events will begin firing immediately also, once per second.
+If start() occurs before or during the frame, a begin event will be published.
+Tick events will begin firing immediately also, once per second.
 
     tf.mute();
 
@@ -325,7 +332,7 @@ will resume the publishing of tick events until the endsAt time is reached.
 
 By default, time frames will be as accurate as possible. If a frame that ticks
 every half hour begins at 3:15, the next tick will occur at 3:45, within the
-general margin of error that setTimeout requires of us.
+general margin of error that setTimeout requires us to accept.
 
     var tf = new KairosTimeFrame({
       beginsAt: '2012-01-01 15:15:00',
@@ -363,7 +370,7 @@ will tick at
 
     0, 1005, 2010, 3006, 4011, 5001, 6009
 
-We've compensated for the setTimeout drift! We should always be within a few
+We always compensate for the normal setTimeout drift, and will be within a few
 milliseconds of the interval specified. If we started the timer 500ms after
 the epoch (and had a time machine):
 
@@ -380,7 +387,7 @@ Note that the interval of 1 second is maintained, relative to the start time
 of 500ms after the epoch.
 
 However, we might want to sync to the user's clock, and tick exactly on the
-second. In this case, syncing can be turned on.
+second. In this case, syncing can be turned on using the syncsTo option:
 
     var tf = new KairosFrame({
       beginsAt: 500,
@@ -388,7 +395,8 @@ second. In this case, syncing can be turned on.
       syncsTo: '1 second'
     }).start();
 
-This will cause the ticks to occur perhaps at
+Even though the start time is at 500ms after the epoch, the syncsTo option will
+cause the ticks to occur perhaps at:
 
     1002, 2011, 3009, 4013, 5000, 6002
 
@@ -828,22 +836,30 @@ Returns a particular named time frame, if a frame with the given name exists.
 
 ## Contributing
 
-We use grunt for running tests and such, so, if you want to contribute, you
-should to install grunts cli `sudo npm install -g grunt-cli`. Once you have
-done so, you can run any of our grunt tasks: `grunt watch`, `grunt test`,
-`grunt build`, `grunt release:(major or minor or patch)`
+We use grunt for running tests and such. If you want to contribute, you
+should install the grunt cli and install dependencies.
+
+    sudo npm install -g grunt-cli
+    npm install
+
+Once you have done so, you can run any of our grunt tasks.
+
+    grunt watch
+    grunt test
+    grunt build
+    grunt release:(major or minor or patch)
 
 ## Appendix
 
 [Kairos](http://en.wikipedia.org/wiki/Kairos) (καιρός) /kī¦räs/ is an ancient
-Greek word meaning the right or opportune moment (the supreme moment). The
-ancient Greeks had two words for time, chronos and kairos. While the former
-refers to chronological or sequential time, the latter signifies a time
-between, a moment of indeterminate time in which something special happens.
-What the special something is depends on who is using the word. While chronos
-is quantitative, kairos has a qualitative nature. In rhetoric kairos is "a
-passing instant when an opening appears which must be driven through with force
-if success is to be achieved."
+Greek word meaning the right, opportune, or supreme moment. The ancient Greeks
+had two words for time, "chronos" and "kairos". While the former refers to
+chronological or sequential time, the latter signifies a time between, a moment
+of indeterminate time in which something special happens. What the special
+something is depends on who is using the word. While chronos is quantitative,
+kairos has a qualitative nature. In rhetoric kairos is "a passing instant when
+an opening appears which must be driven through with force if success is to
+be achieved."
 
 ## License
 
