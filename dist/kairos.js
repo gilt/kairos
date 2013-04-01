@@ -1,4 +1,67 @@
-/*! kairos v0.2.0 2013-03-28 */
+/*! kairos v0.3.0 2013-04-01 */
+/* global _: false */
+(function (exports) {
+
+  /**
+   * @public
+   * @constructor AccessDenied
+   *
+   * @param {String} [message]
+   */
+  function AccessDenied (message) {
+    this.name = 'AccessDenied';
+    this.message = message || 'Access is denied';
+  }
+  AccessDenied.prototype = new Error();
+  AccessDenied.prototype.constructor = AccessDenied;
+  exports.AccessDenied = AccessDenied;
+
+  /**
+   * @public
+   * @constructor DuplicateError
+   *
+   * @param {String} [message]
+   */
+  function DuplicateError (message) {
+    this.name = 'DuplicateError';
+    this.message = message || 'Duplicate values found';
+  }
+  DuplicateError.prototype = new Error();
+  DuplicateError.prototype.constructor = DuplicateError;
+  exports.DuplicateError = DuplicateError;
+
+  /**
+   * @public
+   * @constructor ImmutableError
+   *
+   * @param {String} [message]
+   */
+  function ImmutableError (message) {
+    this.name = 'ImmutableError';
+    this.message = message || 'This object is immutable';
+  }
+  ImmutableError.prototype = new Error();
+  ImmutableError.prototype.constructor = ImmutableError;
+  exports.ImmutableError = ImmutableError;
+
+  /**
+   * @public
+   * @constructor MissingParameter
+   *
+   * @param {String} [message]
+   */
+  function MissingParameter (message) {
+    this.name = 'MissingParameter';
+    this.message = message || 'No value was provided';
+  }
+  MissingParameter.prototype = new Error();
+  MissingParameter.prototype.constructor = MissingParameter;
+  exports.MissingParameter = MissingParameter;
+
+}(
+  'object' === typeof exports && exports || this
+));
+
 /* global _: false */
 (function (exports, _, privateKey) {
 
@@ -92,7 +155,25 @@
     };
   }
 
-  // this will be replaced with horo
+  /**
+   * Normalize a duration in one of several forms into a simple number of ms.
+   *
+   * Accepted forms:
+   *   {Number} of milliseconds, e.g. 1000
+   *   {String}:
+   *     Number of milliseconds, e.g. "1000"
+   *     ISO-8601 Duration form (PnYnMnDTnHnMnH), e.g. 'PT1H15M'
+   *     Natural Language form, e.g. '1 Hour and 15 Minutes'
+   *
+   * @private
+   * @method  normalizeDuration
+   *
+   * @note    This will be replaced by horo (https://github.com/gilt/horo)
+   *
+   * @param   {String|Number} duration
+   *
+   * @return  {Number}
+   */
   function normalizeDuration (duration) {
 
     // First, check to see if the duration is already a number, e.g. 1000,
@@ -155,7 +236,32 @@
     return 0;
   }
 
-  // this will be replaced with horo
+  /**
+   * Normalize a moment in one of several forms into an unix timestamp
+   *
+   * Accepted forms:
+   *   {Number} of milliseconds, e.g. 1000
+   *   {Date}
+   *   {String}:
+   *     Number of milliseconds, e.g. "1000"
+   *     ISO-8601 Date form (yyyy-mm-ddThh:mm:ss), e.g. '2013-03-29'
+   *     ISO-8601 Duration form (PnYnMnDTnHnMnH), e.g. 'PT1H15M'
+   *     Named Time, e.g. 'now' or 'saleStart'
+   *     Sentence form, offsetting a moment with a duration,
+   *       e.g. '1 hour after lunch'
+   *     Sentence form, interpolating two moments,
+   *       e.g. '50% between lunch and dinner'
+   *
+   * @private
+   * @method  normalizeMoment
+   *
+   * @note    This will be replaced by horo (https://github.com/gilt/horo)
+   *
+   * @param   {String|Number|Date} moment
+   * @param   {Object}             namedTimes
+   *
+   * @return  {Number}
+   */
   function normalizeMoment (moment, namedTimes) {
 
     // First, check to see if the moment is already a number, e.g. 1000,
@@ -195,9 +301,10 @@
 
         if (results) {
 
-          // Since we matched
+          // Since we matched, let's see what mode we're in
           switch (parser.mode) {
           case 'interpolated':
+            // We're going to interpolate between 2 moments
             moment = {
               interpolated: parseFloat(results[1]) * (/%/.test(results[1]) ? 0.01 : 1),
               between: results[2],
@@ -205,18 +312,21 @@
             };
             break;
           case 'after':
+            // We're going to add a duration to a moment
             moment = {
               starting: results[1],
               after: results[2]
             };
             break;
           case 'before':
+            // We're going to subtract a duration from a moment
             moment = {
               starting: results[1],
               before: results[2]
             };
             break;
           case 'at':
+            // We're actually AT a moment
             moment = {
               at: results[1]
             };
@@ -262,6 +372,12 @@
     return 0;
   }
 
+  /**
+   * Freezes the normalized forms of each parameter that can be normalized
+   *
+   * @private
+   * @method  freeze
+   */
   function freeze () {
     var
       p = this._private(privateKey);
@@ -270,15 +386,23 @@
     p.normalizedEndsAt = this.getEndsAt();
     p.normalizedTicksEvery = this.getTicksEvery();
     p.normalizedRelativeTo = this.getRelativeTo();
-    p.normalizedSyncTo = this.getSyncTo();
+    p.normalizedSyncsTo = this.getSyncsTo();
     p.normalizedNamedTimes = this.getNamedTimes();
   }
 
+  /**
+   * Calculate when the next tick will occur
+   *
+   * @private
+   * @method  getNextTick
+   *
+   * @return  {Number}
+   */
   function getNextTick () {
     var
       now = (new Date()).getTime(),
       interval = this.getTicksEvery(),
-      sync = this.getSyncTo();
+      sync = this.getSyncsTo();
 
     return now +
       interval -
@@ -289,11 +413,18 @@
         );
   }
 
+  /**
+   * Ticks during a time frame
+   *
+   * @private
+   * @method    tick
+   *
+   * @publishes 'ticked'
+   */
   function tick () {
     var
       p = this._private(privateKey);
 
-    //console.log('TICKING AWAY');
     this.publish('ticked', this);
 
     p.tickTimeout = setTimeout(
@@ -302,6 +433,14 @@
     );
   }
 
+  /**
+   * Ends a time frame
+   *
+   * @private
+   * @method    end
+   *
+   * @publishes 'ended'
+   */
   function end () {
     var
       p = this._private(privateKey);
@@ -314,7 +453,15 @@
     this.publish('ended', this);
   }
 
-  function start () {
+  /**
+   * Begins a time frame
+   *
+   * @private
+   * @method    begin
+   *
+   * @publishes 'began'
+   */
+  function begin () {
     var
       p = this._private(privateKey);
 
@@ -338,6 +485,34 @@
     }
   }
 
+  /**
+   * Creates a new time frame
+   *
+   * @public
+   * @constructor KairosTimeFrame
+   *
+   * @param {String} [name]
+   * @param {Object} [params]
+   *
+   * @usage:
+   *  var myTimeFrame = new KairosTimeFrame({
+   *    beginsAt: '2012-04-01T12:00-0400',
+   *    endsAt: '36 hours after beginsAt',
+   *    ticksEvery: '1 hour'
+   *  }).subscribe('began', onBegin)
+   *    .subscribe('ended', onEnd)
+   *    .subscribe('ticked', onTick)
+   *    .start()
+   *
+   *  var myOtherTimeFrame = new KairosTimeFrame('foo')
+   *    .beginsAt('2012-04-01T12:00-0400')
+   *    .endsAt('36 hours after beginsAt')
+   *    .start()
+   *    .subscribe('began', onBegin)
+   *    .subscribe('ended', onEnd)
+   *    .subscribe('ticked', onTick)
+   *    .start()
+   */
   function KairosTimeFrame (name, params) {
     this.logger.info('Creating a new Kairos Time Frame');
 
@@ -362,15 +537,46 @@
       never: Infinity
     });
 
+    /**
+     * Our private data needs to be accessible from our prototypes, but not be
+     * accessible otherwise. We accomplish this using a lock & key
+     *
+     * @private
+     * @method  _private
+     *
+     * @param   {String} key
+     *
+     * @return  {Object}
+     *
+     * @throws  AccessDenied
+     */
     this._private = function (key) {
       if (key === privateKey) {
         return privateData;
       }
-      throw 'Access Denied';
+      throw new exports.AccessDenied();
     };
   }
 
   _.extend(KairosTimeFrame.prototype, {
+
+    /**
+     * Starts a frame
+     *
+     * A quick note on terminology:
+     *   "begin", in this context, means the the moment when things start to
+     *     happen, e.g. it corresponds to the 'beginsAt' parameter.
+     *   "start", in this context, is a control command, meaning, I'm done with
+     *     setup, go start doing stuff, or wait until "begin" to do so.
+     *
+     * @public
+     * @method start
+     *
+     * @return {KairosTimeFrame}
+     *
+     * @usage:
+     *   myTimeFrame.start()
+     */
     start: function () {
       if (!this.isStarted() && !this.isStopped()) {
         var
@@ -384,11 +590,11 @@
         if (this.getEndsAt() <= now) {
           p.isEnded = true;
         } else if (this.getBeginsAt() <= now) {
-          start.call(this);
+          begin.call(this);
         } else {
 
           p.startTimeout = setTimeout(
-            _.bind(start, this),
+            _.bind(begin, this),
             this.getBeginsAt() - (new Date()).getTime()
           );
         }
@@ -397,6 +603,19 @@
       return this;
     },
 
+    /**
+     * Permanently stops the time frame. Everything gets shut down, and can not
+     * be restarted.
+     *
+     * @public
+     * @destructor
+     * @method     stop
+     *
+     * @return     {KairosTimeFrame}
+     *
+     * @usage:
+     *   myTimeFrame.stop()
+     */
     stop: function () {
       if (!this.isStopped()) {
         var
@@ -412,6 +631,20 @@
       return this;
     },
 
+    /**
+     * Mutes tick notifications. Begin/End notifications still occur, but this
+     * will prevent a spam of ticks.
+     *
+     * @public
+     * @method    mute
+     *
+     * @publishes 'muted'
+     *
+     * @return    {KairosTimeFrame}
+     *
+     * @usage:
+     *   myTimeFrame.mute()
+     */
     mute: function () {
       var p = this._private(privateKey);
 
@@ -426,6 +659,19 @@
       return this;
     },
 
+    /**
+     * Unmutes (Resumes) tick notifications.
+     *
+     * @public
+     * @method    unmute
+     *
+     * @publishes 'unmuted'
+     *
+     * @return    {KairosTimeFrame}
+     *
+     * @usage:
+     *   myTimeFrame.unmute()
+     */
     unmute: function () {
       var p = this._private(privateKey);
 
@@ -445,6 +691,20 @@
       return this;
     },
 
+    /**
+     * Subscribes a function to a given channel.
+     *
+     * @public
+     * @method subscribe
+     *
+     * @param  {String}   channel
+     * @param  {Function} fn
+     *
+     * @return {KairosTimeFrame}
+     *
+     * @usage:
+     *   myTimeFrame.subscribe('foo', function (bar) { ... }
+     */
     subscribe: function (channel, fn) {
       var notifyChannels = this._private(privateKey).notifyChannels;
 
@@ -456,6 +716,21 @@
       return this;
     },
 
+    /**
+     * Publishes an event on a given channel.
+     *
+     * @public
+     * @method publish
+     *
+     * @param  {String} channel
+     * @param  {Mixed}  [args]
+     * @param  {Object} [scope]
+     *
+     * @return {KairosTimeFrame}
+     *
+     * @usage:
+     *   myTimeFrame.publish('foo', bar);
+     */
     publish: function (channel, args, scope) {
       var
         self = this,
@@ -478,6 +753,19 @@
       return this;
     },
 
+    /**
+     * Unsubscribes a function from a given channel.
+     *
+     * @public
+     * @method unsubscribe
+     *
+     * @param  {Mixed} handle
+     *
+     * @return {KairosTimeFrame}
+     *
+     * @usage:
+     *   myTimeFrame.unsubscribe(['foo', fooFn])
+     */
     unsubscribe: function (handle) {
       var
         notifyChannels = this._private(privateKey).notifyChannels,
@@ -496,6 +784,16 @@
       return this;
     },
 
+    /**
+     * Returns a representation of this frame suitable for json serialization.
+     *
+     * @public
+     * @method toJSON
+     *
+     * @alias toJson
+     *
+     * @return {Object}
+     */
     toJSON: function () {
       return {
         name: this.getName(),
@@ -510,13 +808,21 @@
         ends_at: this.getEndsAt(),
         ticks_every: this.getTicksEvery(),
         relative_to: this.getRelativeTo(),
-        sync_to: this.getSyncTo(),
+        sync_to: this.getSyncsTo(),
         named_times: this.getNamedTimes(),
         data: this.getData(),
         relative_duration: this.getRelativeDuration()
       };
     },
 
+    /**
+     * Returns a string representation of this time frame.
+     *
+     * @public
+     * @method toString
+     *
+     * @return {String}
+     */
     toString: function () {
       return JSON.stringify(this.toJson(), null, 2);
     },
@@ -529,30 +835,100 @@
       error: logChannelFactory('error')
     },
 
+    /**
+     * Has start been called on this time frame?
+     *
+     * @public
+     * @method isStarted
+     * @getter
+     *
+     * @return {Boolean}
+     */
     isStarted: function () {
       return this._private(privateKey).isStarted;
     },
 
+    /**
+     * Has stop been called on this time frame?
+     *
+     * @public
+     * @method isStopped
+     * @getter
+     *
+     * @return {Boolean}
+     */
     isStopped: function () {
       return this._private(privateKey).isStopped;
     },
 
+    /**
+     * Is this time frame currently muted?
+     *
+     * @public
+     * @method isMuted
+     * @getter
+     *
+     * @return {Boolean}
+     */
     isMuted: function () {
       return this._private(privateKey).isMuted;
     },
 
+    /**
+     * Has this frame begun yet?
+     *
+     * @public
+     * @method isBegun
+     * @getter
+     *
+     * @return {Boolean}
+     */
     isBegun: function () {
       return this._private(privateKey).isBegun;
     },
 
+    /**
+     * Has this frame ended yet?
+     *
+     * @public
+     * @method isBegun
+     * @getter
+     *
+     * @return {Boolean}
+     */
     isEnded: function () {
       return this._private(privateKey).isEnded;
     },
 
+    /**
+     * What is the name of this time frame?
+     *
+     * @public
+     * @method getName
+     * @getter
+     *
+     * @return {String}
+     */
     getName: function () {
       return this._private(privateKey).name;
     },
 
+    /**
+     * Get the millisecond value (or the original value) of the 'beginsAt' property.
+     *
+     * @public
+     * @method getBeginsAt
+     * @getter
+     *
+     * @param  {Object}  [opts]
+     * @param  {Boolean} [opts.originalValue=false]
+     *
+     * @return {Number|Mixed}
+     *
+     * @usage:
+     *   myTimeFrame.getBeginsAt() // 1234567890
+     *   myTimeFrame.getBeginsAt({ originalValue: true }) // 'PT1H after noon'
+     */
     getBeginsAt: function (opts) {
       opts = _.extend({
         originalValue: false
@@ -577,18 +953,51 @@
       }
     },
 
+    /**
+     * Set the 'beginsAt' property. Will throw an error if start has already
+     * been called.
+     * 
+     * @public
+     * @method setBeginsAt
+     * @setter
+     *
+     * @param  {Mixed} value
+     *
+     * @return {KairosTimeFrame}
+     *
+     * @throws {MissingParameter|ImmutableError}
+     *
+     * @usage:
+     *   myTimeFrame.setBeginsAt('1 hour after noon')
+     */
     setBeginsAt: function (value) {
       if (!value) {
-        throw 'No value provided';
+        throw new exports.MissingParameter();
       } else if (!this.isStarted()) {
         this._private(privateKey).beginsAt = value;
       } else {
-        throw 'Immutable';
+        throw new exports.ImmutableError();
       }
 
       return this;
     },
 
+    /**
+     * Get the millisecond value (or the original value) of the 'endsAt' property.
+     *
+     * @public
+     * @method getEndsAt
+     * @getter
+     *
+     * @param  {Object}  [opts]
+     * @param  {Boolean} [opts.originalValue=false]
+     *
+     * @return {Number|Mixed}
+     *
+     * @usage:
+     *   myTimeFrame.getEndsAt() // 1234567890
+     *   myTimeFrame.getEndsAt({ originalValue: true }) // 'PT1H after noon'
+     */
     getEndsAt: function (opts) {
       opts = _.extend({
         originalValue: false
@@ -615,18 +1024,51 @@
       }
     },
 
+    /**
+     * Set the 'endsAt' property. Will throw an error if start has already
+     * been called.
+     *
+     * @public
+     * @method setEndsAt
+     * @setter
+     *
+     * @param  {Mixed} value
+     *
+     * @return {KairosTimeFrame}
+     *
+     * @throws {MissingParameter|ImmutableError}
+     *
+     * @usage:
+     *   myTimeFrame.setEndsAt('1 hour after noon')
+     */
     setEndsAt: function (value) {
       if (!value) {
-        throw 'No value provided';
+        throw new exports.MissingParameter();
       } else if (!this.isStarted()) {
         this._private(privateKey).endsAt = value;
       } else {
-        throw 'Immutable';
+        throw new exports.ImmutableError();
       }
 
       return this;
     },
 
+    /**
+     * Get the millisecond value (or the original value) of the 'ticksEvery' property.
+     *
+     * @public
+     * @method getTicksEvery
+     * @getter
+     *
+     * @param  {Object}  [opts]
+     * @param  {Boolean} [opts.originalValue=false]
+     *
+     * @return {Number|Mixed}
+     *
+     * @usage:
+     *   myTimeFrame.getTicksEvery() // 5000
+     *   myTimeFrame.getTicksEvery({ originalValue: true }) // '5 seconds'
+     */
     getTicksEvery: function (opts) {
       opts = _.extend({
         originalValue: false
@@ -643,18 +1085,51 @@
       }
     },
 
+    /**
+     * Set the 'ticksEvery' property. Will throw an error if start has already
+     * been called.
+     *
+     * @public
+     * @method setTicksEvery
+     * @setter
+     *
+     * @param  {Mixed} value
+     *
+     * @return {KairosTimeFrame}
+     *
+     * @throws {MissingParameter|ImmutableError}
+     *
+     * @usage:
+     *   myTimeFrame.setTicksEvery('1 second')
+     */
     setTicksEvery: function (value) {
       if (!value) {
-        throw 'No value provided';
+        throw new exports.MissingParameter();
       } else if (!this.isStarted()) {
         this._private(privateKey).ticksEvery = value;
       } else {
-        throw 'Immutable';
+        throw new exports.ImmutableError();
       }
 
       return this;
     },
 
+    /**
+     * Get the millisecond value (or the original value) of the 'relativeTo' property.
+     *
+     * @public
+     * @method getRelativeTo
+     * @getter
+     *
+     * @param  {Object}  [opts]
+     * @param  {Boolean} [opts.originalValue=false]
+     *
+     * @return {Number|Mixed}
+     *
+     * @usage:
+     *   myTimeFrame.getRelativeTo() // 1234567890
+     *   myTimeFrame.getRelativeTo({ originalValue: true }) // 'PT1H after noon'
+     */
     getRelativeTo: function (opts) {
       opts = _.extend({
         originalValue: false
@@ -682,19 +1157,52 @@
       }
     },
 
+    /**
+     * Set the 'relativeTo' property. Will throw an error if start has already
+     * been called.
+     *
+     * @public
+     * @method setRelativeTo
+     * @setter
+     *
+     * @param  {Mixed} value
+     *
+     * @return {KairosTimeFrame}
+     *
+     * @throws {MissingParameter|ImmutableError}
+     *
+     * @usage:
+     *   myTimeFrame.setRelativeTo('1 hour after noon')
+     */
     setRelativeTo: function (value) {
       if (!value) {
-        throw 'No value provided';
+        throw new exports.MissingParameter();
       } else if (!this.isStarted()) {
         this._private(privateKey).relativeTo = value;
       } else {
-        throw 'Immutable';
+        throw new exports.ImmutableError();
       }
 
       return this;
     },
 
-    getSyncTo: function (opts) {
+    /**
+     * Get the millisecond value (or the original value) of the 'syncsTo' property.
+     *
+     * @public
+     * @method getSyncsTo
+     * @getter
+     *
+     * @param  {Object}  [opts]
+     * @param  {Boolean} [opts.originalValue=false]
+     *
+     * @return {Number|Mixed}
+     *
+     * @usage:
+     *   myTimeFrame.getSyncsTo() // 2500
+     *   myTimeFrame.getSyncsTo({ originalValue: true }) 'PT2.5S'
+     */
+    getSyncsTo: function (opts) {
       opts = _.extend({
         originalValue: false
       }, opts);
@@ -702,26 +1210,63 @@
       var p = this._private(privateKey);
 
       if (opts.originalValue) {
-        return p.syncTo;
+        return p.syncsTo;
       } else if (this.isStarted()) {
-        return p.normalizedSyncTo;
+        return p.normalizedSyncsTo;
       } else {
-        return normalizeDuration(p.syncTo);
+        return normalizeDuration(p.syncsTo);
       }
     },
 
-    setSyncTo: function (value) {
+    /**
+     * Set the 'syncsTo' property. Will throw an error if start has already
+     * been called.
+     *
+     * @public
+     * @method setSyncsTo
+     * @setter
+     *
+     * @param  {Mixed} value
+     *
+     * @return {KairosTimeFrame}
+     *
+     * @throws {MissingParameter|ImmutableError}
+     *
+     * @usage:
+     *   myTimeFrame.setSyncsTo('1 hour after noon')
+     */
+    setSyncsTo: function (value) {
       if (!value) {
-        throw 'No value provided';
+        throw new exports.MissingParameter();
       } else if (!this.isStarted()) {
-        this._private(privateKey).syncTo = value;
+        this._private(privateKey).syncsTo = value;
       } else {
-        throw 'Immutable';
+        throw new exports.ImmutableError();
       }
 
       return this;
     },
 
+    /**
+     * Get the millisecond values (or the original values) of all of the named
+     * times. Can also include the default named times (epoch, now, never, beginsAt, endsAt)
+     *
+     * @public
+     * @method getNamedTimes
+     * @getter
+     *
+     * @param  {Object}  [opts]
+     * @param  {Boolean} [opts.originalValue=false]
+     * @param  {Boolean} [opts.includeDefaults=false]
+     *
+     * @return {Object}
+     *
+     * @usage:
+     *   myTimeFrame.getNamedTimes() // { noon: 1234567890 }
+     *   myTimeFrame.getNamedTimes({ originalValues: true }) // { noon: '2013-04-01T12:00' }
+     *   myTimeFrame.getNamedTimes({ includeDefaults: true }) // { noon: 1234567890, epoch: 0, now: 2345678901, never: Infinity }
+     *   myTimeFrame.getNamedTimes({ originalValues: true, includeDefaults: true }) // { noon: '2013-04-01T12:00', epoch: 0, now: 2345678901, never: Infinity }
+     */
     getNamedTimes: function (opts) {
       opts = _.extend({
         originalValue: false,
@@ -758,40 +1303,88 @@
       return result;
     },
 
+    /**
+     * Extends the set of named times.
+     *
+     * @public
+     * @method extendNamedTimes
+     *
+     * @param  {Object} obj
+     *
+     * @return {KairosTimeFrame}
+     *
+     * @throws {MissingParameter|ImmutableError}
+     */
     extendNamedTimes: function (obj) {
       if (!obj) {
-        throw 'No value provided';
+        throw new exports.MissingParameter();
       } else if (!this.isStarted()) {
         _.extend(this._private(privateKey).namedTimes, obj);
       } else {
-        throw 'Immutable';
+        throw new exports.ImmutableError();
       }
 
       return this;
     },
 
+    /**
+     * Returns the 'data' parameter, which is intended for use by consumers.
+     *
+     * @public
+     * @method getData
+     * @getter
+     *
+     * @return {Object}
+     */
     getData: function () {
       return this._private(privateKey).data;
     },
 
+    /**
+     * Set the 'data' property. Will throw an error if start has already
+     * been called.
+     *
+     * @public
+     * @method setData
+     * @setter
+     *
+     * @param  {Object} value
+     *
+     * @return {KairosTimeFrame}
+     *
+     * @throws {MissingParameter|ImmutableError}
+     */
     setData: function (value) {
       if (!value) {
-        throw 'No value provided';
+        throw new exports.MissingParameter();
       } else if (!this.isStarted()) {
         this._private(privateKey).data = value;
       } else {
-        throw 'Immutable';
+        throw new exports.ImmutableError();
       }
 
       return this;
     },
 
+    /**
+     * Get the current duration relative to the 'relativeTo' time
+     *
+     * @public
+     * @method getRelativeDuration
+     *
+     * @return {Number}
+     */
     getRelativeDuration: function () {
       return this.getRelativeTo() - (new Date()).getTime();
-    }
+    },
+
+    version: '0.3.0' // TODO: ALWAYS REMEMBER TO UPDATE THIS
+                     // TODO #2: Automate this
   });
 
   KairosTimeFrame.prototype.toJson = KairosTimeFrame.prototype.toJSON;
+
+  KairosTimeFrame.version = '0.3.0'; // TODO: ALWAYS REMEMBER TO UPDATE THIS
 
   exports.KairosTimeFrame = KairosTimeFrame;
 
@@ -824,6 +1417,14 @@
     };
   }
 
+  /**
+   * Wires up began/ended/ticked/muted/unmuted proxy subscriptions for a frame.
+   *
+   * @private
+   * @method  wireupSubscriptions
+   *
+   * @param   {KairosTimeFrame} frame
+   */
   function wireupSubscriptions (frame) {
     var self = this;
 
@@ -863,6 +1464,28 @@
     });
   }
 
+  /**
+   * Creates a collection of time frames.
+   *
+   * @public
+   * @constructor KairosCollection
+   * @constructor
+   *
+   * @param {KairosTimeFrame[]|Object[]} frames
+   *
+   * @throws {DuplicateError}
+   *
+   * @usage:
+   *   myCollection = new KairosCollection([
+   *     new KairosTimeFrame('foo'),
+   *     new KairosTimeFrame({
+   *       beginsAt: 'now'
+   *     }),
+   *     {
+   *       beginsAt: 'epoch'
+   *     }
+   *   ]).start()
+   */
   function KairosCollection (frames) {
     this.logger.info('Creating a new Kairos Collection');
 
@@ -880,44 +1503,103 @@
       names = _.compact(_.invoke(privateData.frames, 'getName'));
 
     if (names.length !== _.unique(names).length) {
-      throw 'Duplicate Names';
+      throw new exports.DuplicateError('Duplicate names found');
     }
 
     _.each(privateData.frames, _.bind(wireupSubscriptions, this));
 
+    /**
+     * Our private data needs to be accessible from our prototypes, but not be
+     * accessible otherwise. We accomplish this using a lock & key
+     *
+     * @private
+     * @method  _private
+     *
+     * @param   {String} key
+     *
+     * @return  {Object}
+     *
+     * @throws  AccessDenied
+     */
     this._private = function (key) {
       if (key === privateKey) {
         return privateData;
       }
-      throw 'Access Denied';
+      throw new exports.AccessDenied();
     };
   }
 
   _.extend(KairosCollection.prototype, {
+    /**
+     * Starts each frame
+     *
+     * @public
+     * @method start
+     *
+     * @return {KairosCollection}
+     */
     start: function () {
       _.invoke(this._private(privateKey).frames, 'start');
 
       return this;
     },
 
+    /**
+     * Stops each frame
+     *
+     * @public
+     * @method stop
+     *
+     * @return {KairosCollection}
+     */
     stop: function () {
       _.invoke(this._private(privateKey).frames, 'stop');
 
       return this;
     },
 
+    /**
+     * Mutes each frame
+     *
+     * @public
+     * @method mute
+     *
+     * @return {KairosCollection}
+     */
     mute: function () {
       _.invoke(this._private(privateKey).frames, 'mute');
 
       return this;
     },
 
+    /**
+     * Unmutes each frame
+     *
+     * @public
+     * @method unmute
+     *
+     * @return {KairosCollection}
+     */
     unmute: function () {
       _.invoke(this._private(privateKey).frames, 'unmute');
 
       return this;
     },
 
+    /**
+     * Subscribes a function to a given channel.
+     *
+     * @public
+     * @method subscribe
+     *
+     * @param  {String}   channel
+     * @param  {Function} fn
+     *
+     * @return {KairosCollection}
+     *
+     * @usage:
+     *   myCollection.subscribe('foo', function (bar) { ... }
+     */
     subscribe: function (channel, fn) {
       var notifyChannels = this._private(privateKey).notifyChannels;
 
@@ -929,6 +1611,21 @@
       return this;
     },
 
+    /**
+     * Publishes an event on a given channel.
+     *
+     * @public
+     * @method publish
+     *
+     * @param  {String} channel
+     * @param  {Mixed}  [args]
+     * @param  {Object} [scope]
+     *
+     * @return {KairosCollection}
+     *
+     * @usage:
+     *   myCollection.publish('foo', bar);
+     */
     publish: function (channel, args, scope) {
       var
         self = this,
@@ -951,6 +1648,19 @@
       return this;
     },
 
+    /**
+     * Unsubscribes a function from a given channel.
+     *
+     * @public
+     * @method unsubscribe
+     *
+     * @param  {Mixed} handle
+     *
+     * @return {KairosCollection}
+     *
+     * @usage:
+     *   myCollection.unsubscribe(['foo', fooFn])
+     */
     unsubscribe: function (handle) {
       var
         notifyChannels = this._private(privateKey).notifyChannels,
@@ -969,10 +1679,30 @@
       return this;
     },
 
+    /**
+     * Returns a representation of this collection suitable for json serialization.
+     *
+     * @public
+     * @method toJSON
+     *
+     * @alias toJson
+     *
+     * @todo
+     *
+     * @return {Object}
+     */
     toJSON: function () {
       return {};
     }, // TODO
 
+    /**
+     * Returns a string representation of this time frame.
+     *
+     * @public
+     * @method toString
+     *
+     * @return {String}
+     */
     toString: function () {
       return JSON.stringify(this.toJson(), null, 2);
     },
@@ -985,6 +1715,45 @@
       error: logChannelFactory('error')
     },
 
+    /**
+     * Extends the set of named times in each frame.
+     *
+     * @public
+     * @method extendNamedTimes
+     *
+     * @param  {Object} obj
+     *
+     * @return {KairosCollection}
+     *
+     * @throws {MissingParameter|ImmutableError}
+     *
+     * @usage:
+     *   myCollection.extendNamedTimes({
+     *     foo: new Date('1234-05-06')
+     *   })
+     */
+    extendNamedTimes: function (obj) {
+      _.invoke(this._private(privateKey).frames, 'extendNamedTimes', obj);
+
+      return this;
+    },
+
+    /**
+     * Adds a time frame to the collection
+     *
+     * @public
+     * @method pushTimeFrame
+     *
+     * @param  {KairosTimeFrame|Object} frame
+     *
+     * @return {KairosCollection}
+     *
+     * @usage:
+     *   myCollection.pushTimeFrame(new KairosTimeFrame())
+     *   myCollection.pushTimeFrame({
+     *     beginsAt: 'noon'
+     *     })
+     */
     pushTimeFrame: function (frame) {
       if (!(frame instanceof KairosTimeFrame)) {
         frame = new KairosTimeFrame(frame);
@@ -999,28 +1768,48 @@
       return this;
     },
 
-    extendNamedTimes: function (obj) {
-      _.invoke(this._private(privateKey).frames, 'extendNamedTimes', obj);
-
-      return this;
-    },
-
+    /**
+     * Gets all of the time frames
+     *
+     * @public
+     * @method getTimeFrames
+     * @getter
+     *
+     * @return {KairosTimeFrame[]}
+     */
     getTimeFrames: function () {
       return _.clone(this._private(privateKey).frames);
     },
 
+    /**
+     * Find a single time frame by name
+     *
+     * @public
+     * @method getNamedTimeFrame
+     *
+     * @param  {String} name
+     *
+     * @return {KairosTimeFrame}
+     *
+     * @throws {MissingParameter}
+     */
     getNamedTimeFrame: function (name) {
       if (!name) {
-        throw 'No Name Provided';
+        throw new exports.MissingParameter('No name was provided');
       } else {
         return _.find(this._private(privateKey).frames, function (frame) {
           return frame.getName() === name;
         });
       }
-    }
+    },
+
+    version: '0.3.0' // TODO: ALWAYS REMEMBER TO UPDATE THIS
+                     // TODO #2: Automate this
   });
 
   KairosCollection.prototype.toJson = KairosCollection.prototype.toJSON;
+
+  KairosCollection.version = '0.3.0'; // TODO: ALWAYS REMEMBER TO UPDATE THIS
 
   exports.KairosCollection = KairosCollection;
 
