@@ -76,7 +76,7 @@ lunch:
     // be provided to all frames at once, and allows subscribers to be attached
     // in one place. The start method will propagate down to all three frames.
     var frameContainer = new KairosContainer([beforeLunchFrame, almostLunchFrame, lunchtimeFrame])
-      .addNamedTimes({ 'lunch' : '2012-01-01' })
+      .extendNamedTimes({ 'lunch' : '2012-01-01' })
       .subscribe('beforeLunch/ticked', function (frame) {
         console.log('Time till lunch: ' + (frame.getRelativeDuration() * 1000 * 60) + ' minutes');
       })
@@ -139,7 +139,7 @@ we implement it in our own codebase.
     // actually takes the duration provided by the current frame and passes it
     // to a formatter to display the countdown timers.
     var frameContainer = new KairosContainer(frames)
-      .addNamedTimes({
+      .extendNamedTimes({
         saleStart: '2012-01-01 12:00:00',
         saleEnd: '2012-01-02 18:00:00'
       })
@@ -226,7 +226,7 @@ The begin time behaves like another named time, so you can also do this:
 
     var tf = new KairosTimeFrame('foo', {
       beginsAt: 'bar',
-      endsAt: '6 hours after beginTime'
+      endsAt: '6 hours after beginsAt'
     });
 
     tf.extendNamedTimes({
@@ -293,6 +293,8 @@ The ticksEvery field can be in milliseconds, LDML, or natural language syntax,
 and the relativeTo field can be a named time, the beginsAt or endsAt times, or
 a Date, Unix timestamp, or Date-constructable string.
 
+If relativeTo is not provided, its default is the beginsAt time.
+
 ### Muting
 
 The frame can be muted or unmuted, which toggles whether tick events are
@@ -306,7 +308,7 @@ published, but ticks will not.
       relativeTo: 'endsAt'
     }).start();
 
-If start() occurs before the frame beginsAt time, a start event will be
+If start() occurs before the frame beginsAt time, a begin event will be
 published. Tick events will begin firing immediately also, once per second.
 
     tf.mute();
@@ -328,8 +330,7 @@ general margin of error that setTimeout requires of us.
     var tf = new KairosTimeFrame({
       beginsAt: '2012-01-01 15:15:00',
       endsAt: '2012-01-01 14:15:00',
-      ticksEvery: '30 minutes',
-      relativeTo: 'endsAt' // TODO: What if we don't care about this, can it be left off?
+      ticksEvery: '30 minutes'
     }).start();
 
 This will publish tick events at 3:15pm, 3:45pm, and 4:15pm.
@@ -341,7 +342,6 @@ however.
       beginsAt: '2012-01-01 15:15:00',
       endsAt: '2012-01-01 14:15:00',
       ticksEvery: '30 minutes',
-      relativeTo: 'endsAt',
       syncsTo: '30 minutes'
     }).start();
 
