@@ -50,6 +50,7 @@ immediately and no end event. Finally, if you start the frame after it is
 Here's a simple example, using the chaining API and counting down the time
 until lunch:
 
+```javascript
     // This frame begins when the page loads, and ends two minutes before a
     // named time 'lunch', which must either be provided to the frame or to
     // the container that holds the frame. The 'now' named time is provided
@@ -102,6 +103,7 @@ until lunch:
         frameContainer.unmute();
       }
     );
+```
 
 ### Real-Life Example
 
@@ -109,6 +111,7 @@ At Gilt, we wrap Kairos with our own logic to prevent overlapping time frames
 and provide formatting. So, the following example shows what we use Kairos for,
 but not how we actually implement it in our own codebase.
 
+```javascript
     // Creates several frames, with explicit non-overlapping begin and end
     // times. The ones that tick will be used for countdown clocks.
     var frames = [
@@ -154,6 +157,7 @@ but not how we actually implement it in our own codebase.
         // actually use a data object within each frame that contains a format
         // string.
       });
+```
 
 ## Feature Overview
 
@@ -161,17 +165,21 @@ but not how we actually implement it in our own codebase.
 
 Creates a new time frame.
 
+```javascript
     new KairosTimeFrame('foo')
       .start();
+```
 
 This frame is now chainable with any of the setters. By default it will begin
 at the epoch in 1970 and run forever, with no ticks. So it won't really do you
 much good at all.
 
+```javascript
     new KairosTimeFrame('foo')
       .setBeginsAt('2012-01-01 12:00:00')
       .setEndsAt('2012-01-01 18:00:00')
       .start();
+```
 
 Now you have a time frame that will begin at noon and end at 6pm on the first
 of January, 2012. It will not tick, but it will publish events when it begins
@@ -181,10 +189,12 @@ nothing will happen.
 
 Hash notation can also be used, like this:
 
+```javascript
     new KairosTimeFrame('foo', {
       beginsAt: '2012-01-01 12:00:00',
       endsAt: '2012-01-01 18:00:00'
     }).start();
+```
 
 Times can be specified in a number of ways:
   - Unix timestamp
@@ -204,6 +214,7 @@ of specific times. The following code sets up a frame that uses two named times
 and then starts them in a separate statement, providing the frame with the two
 named times.
 
+```javascript
     var tf = new KairosTimeFrame('foo', {
       beginsAt: 'bar',
       endsAt: 'baz'
@@ -213,12 +224,14 @@ named times.
       bar: '2012-01-01 12:00:00',
       baz: '2012-01-01 18:00:00'
     }).start();
+```
 
 ### Natural Language
 
 Using natural language syntax allows for much more readable code. The above
 example could also be written:
 
+```javascript
     var tf = new KairosTimeFrame('foo', {
       beginsAt: 'bar',
       endsAt: '6 hours after bar'
@@ -227,9 +240,11 @@ example could also be written:
     tf.extendNamedTimes({
       bar: '2012-01-01 12:00:00'
     }).start();
+```
 
 The begin time behaves like another named time, so you can also do this:
 
+```javascript
     var tf = new KairosTimeFrame('foo', {
       beginsAt: 'bar',
       endsAt: '6 hours after beginsAt'
@@ -238,6 +253,7 @@ The begin time behaves like another named time, so you can also do this:
     tf.extendNamedTimes({
       bar: '2012-01-01 12:00:00'
     }).start();
+```
 
 ### LDML Syntax
 
