@@ -809,7 +809,7 @@ describe('Kairos', function () {
           timeFrame = new KairosTimeFrame({
             beginsAt: '100ms after now',
             endsAt: '200ms after beginsAt',
-            ticksEvery: '90ms' // 100ms SHOULD have worked, but it didn't. end happened first. TODO: fix, or find out where my math went sideways
+            ticksEvery: '50ms' // 100ms SHOULD have worked, but it didn't. end happened first. TODO: fix, or find out where my math went sideways
           }).subscribe('began', function () {
             begun = true;
           }).subscribe('ended', function () {
