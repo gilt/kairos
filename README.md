@@ -280,9 +280,10 @@ tf.extendNamedTimes({
 }).start();
 ```
 
-### LDML Syntax
+### ISO-8601 Duration Syntax
 
-LDML can also be used, combined with natural language.
+[ISO-8601 duration syntax](http://en.wikipedia.org/wiki/ISO_8601#Durations)
+can also be used, combined with natural language.
 
 ```javascript
 var tf = new KairosTimeFrame('foo', {
@@ -346,9 +347,9 @@ tf.subscribe('ticked', function (frame) {
 });
 ```
 
-The ticksEvery field can be in milliseconds, LDML, or natural language syntax,
-and the relativeTo field can be a named time, the beginsAt or endsAt times, or
-a Date, Unix timestamp, or Date-constructable string.
+The ticksEvery field can be in milliseconds, ISO-8601, or natural language
+syntax, and the relativeTo field can be a named time, the beginsAt or endsAt
+times, or a Date, Unix timestamp, or Date-constructable string.
 
 If relativeTo is not provided, its default is the beginsAt time, since the
 default endsAt time is Infinity, which is hard to count from.
