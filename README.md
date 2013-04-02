@@ -51,14 +51,14 @@ Here's a simple example, using the chaining API and counting down the time
 until lunch:
 
 ```javascript
-    var lunchFrame = new KairosTimeFrame('lunchFrame') // the name of this frame is 'lunchFrame'
-      .setBeginsAt('now') // 'now' is a built-in time corresponding to the time of the instance construction
-      .setEndsAt('lunch') // 'lunch' is a named time that is not yet available
-      .setTicksEvery('1 minute') // ticks will be published at 1-minute intervals
-      .setRelativeTo('lunch') // ticks will be published relative to named time 'lunch'
-      .extendNamedTimes({
-        lunch: '2012-01-01 12:00:00' // now we provide the named time 'lunch'
-      }).start(); // and finally start the frame
+var lunchFrame = new KairosTimeFrame('lunchFrame') // the name of this frame is 'lunchFrame'
+  .setBeginsAt('now') // 'now' is a built-in time corresponding to the time of the instance construction
+  .setEndsAt('lunch') // 'lunch' is a named time that is not yet available
+  .setTicksEvery('1 minute') // ticks will be published at 1-minute intervals
+  .setRelativeTo('lunch') // ticks will be published relative to named time 'lunch'
+  .extendNamedTimes({
+    lunch: '2012-01-01 12:00:00' // now we provide the named time 'lunch'
+  }).start(); // and finally start the frame
 ```
 
 It will publish ticks every minute from the time the page loads until the named
@@ -73,61 +73,61 @@ collection, so each frame can share it. We'll also, of course, wait to start
 the frames and use the collection to start all of them at once.
 
 ```javascript
-    // This frame begins when the page loads, and ends two minutes before a
-    // named time 'lunch', which must either be provided to the frame or to
-    // the collection that holds the frame. The 'now' named time is provided
-    // by default to all frames, along with 'never' and 'epoch'.
-    var beforeLunchFrame = new KairosTimeFrame('beforeLunch')
-      .setBeginsAt('now')
-      .setEndsAt('2 minutes before lunch')
-      .setTicksEvery('1 minute')
-      .setRelativeTo('lunch')
-      .extendNamedTimes({
-        lunch: '2012-01-01 12:00:00'
-      });
+// This frame begins when the page loads, and ends two minutes before a
+// named time 'lunch', which must either be provided to the frame or to
+// the collection that holds the frame. The 'now' named time is provided
+// by default to all frames, along with 'never' and 'epoch'.
+var beforeLunchFrame = new KairosTimeFrame('beforeLunch')
+  .setBeginsAt('now')
+  .setEndsAt('2 minutes before lunch')
+  .setTicksEvery('1 minute')
+  .setRelativeTo('lunch')
+  .extendNamedTimes({
+    lunch: '2012-01-01 12:00:00'
+  });
 
-    // This frame begins two minutes before the named time 'lunch', and also
-    // will publish tick events, every second, while it is running. The tick
-    // events will make the frame available, and its getRelativeDuration()
-    // method will provide the time countdown relative to the 'lunch' event.
-    var almostLunchFrame = new KairosTimeFrame('almostLunch')
-      .setBeginsAt('2 minutes before lunch')
-      .setEndsAt('lunch')
-      .setTicksEvery('1 second')
-      .setRelativeTo('lunch');
+// This frame begins two minutes before the named time 'lunch', and also
+// will publish tick events, every second, while it is running. The tick
+// events will make the frame available, and its getRelativeDuration()
+// method will provide the time countdown relative to the 'lunch' event.
+var almostLunchFrame = new KairosTimeFrame('almostLunch')
+  .setBeginsAt('2 minutes before lunch')
+  .setEndsAt('lunch')
+  .setTicksEvery('1 second')
+  .setRelativeTo('lunch');
 
-    // This frame begins at the named time 'lunch', and will be active for an
-    // infinite time after that.
-    var lunchtimeFrame = new KairosTimeFrame('lunchtime')
-      .setBeginsAt('lunch');
+// This frame begins at the named time 'lunch', and will be active for an
+// infinite time after that.
+var lunchtimeFrame = new KairosTimeFrame('lunchtime')
+  .setBeginsAt('lunch');
 
-    // This is a collection to hold all three frames. It allows named times to
-    // be provided to all frames at once, and allows subscribers to be attached
-    // in one place. The start method will propagate down to all three frames.
-    var frameCollection = new KairosCollection([beforeLunchFrame, almostLunchFrame, lunchtimeFrame])
-      .extendNamedTimes({ 'lunch' : '2012-01-01 12:00:00' })
-      .subscribe('beforeLunch/ticked', function (frame) {
-        console.log('Time till lunch: ' + (frame.getRelativeDuration() * 1000 * 60) + ' minutes');
-      })
-      .subscribe('almostLunch/ticked', function (frame) {
-        console.log('Time till lunch: ' + (frame.getRelativeDuration() * 1000) + ' seconds');
-      })
-      .subscribe('lunchtime/began', function () {
-        alert('You should be at lunch now!');
-      })
-      .start();
+// This is a collection to hold all three frames. It allows named times to
+// be provided to all frames at once, and allows subscribers to be attached
+// in one place. The start method will propagate down to all three frames.
+var frameCollection = new KairosCollection([beforeLunchFrame, almostLunchFrame, lunchtimeFrame])
+  .extendNamedTimes({ 'lunch' : '2012-01-01 12:00:00' })
+  .subscribe('beforeLunch/ticked', function (frame) {
+    console.log('Time till lunch: ' + (frame.getRelativeDuration() * 1000 * 60) + ' minutes');
+  })
+  .subscribe('almostLunch/ticked', function (frame) {
+    console.log('Time till lunch: ' + (frame.getRelativeDuration() * 1000) + ' seconds');
+  })
+  .subscribe('lunchtime/began', function () {
+    alert('You should be at lunch now!');
+  })
+  .start();
 
-    // This will mute the tick events published by the two frames that have a
-    // tick interval specified, by calling mute() on all of the frames in the
-    // collection.
-    $('.stop-reminding-me-already').toggle(
-      function () {
-        frameCollection.mute();
-      },
-      function () {
-        frameCollection.unmute();
-      }
-    );
+// This will mute the tick events published by the two frames that have a
+// tick interval specified, by calling mute() on all of the frames in the
+// collection.
+$('.stop-reminding-me-already').toggle(
+  function () {
+    frameCollection.mute();
+  },
+  function () {
+    frameCollection.unmute();
+  }
+);
 ```
 
 ### Real-Life Example
@@ -137,51 +137,51 @@ and provide formatting. So, the following example shows what we use Kairos for,
 but not how we actually implement it in our own codebase.
 
 ```javascript
-    // Creates several frames, with explicit non-overlapping begin and end
-    // times. The ones that tick will be used for countdown clocks.
-    var frames = [
-      new KairosTimeFrame('beforeStart')
-        .setEndsAt('saleStart')
-        .setTicksEvery('1 minute')
-        .setRelativeTo('saleStart'),
-      new KairosTimeFrame('newSale')
-        .setBeginsAt('saleStart')
-        .setEndsAt('12 hours after saleStart'),
-      new KairosTimeFrame('saleRunning')
-        .setBeginsAt('12 hours after saleStart'),
-        .setEndsAt('24 hours before saleEnd')
-        .setTicksEvery('1 hour')
-        .relativeTo('saleEnd'),
-      new KairosTimeFrame('lastDay')
-        .setBeginsAt('24 hours before saleEnd')
-        .setEndsAt('1 hour before saleEnd')
-        .setTicksEvery('1 hour')
-        .relativeTo('saleEnd'),
-      new KairosTimeFrame('endingSoon')
-        .setBeginsAt('1 hour before saleEnd')
-        .setEndsAt('saleEnd')
-        .setTicksEvery('1 minute')
-        .relativeTo('saleEnd'),
-      new KairosTimeFrame('ended')
-        .setBeginsAt('saleEnd')
-    ];
+// Creates several frames, with explicit non-overlapping begin and end
+// times. The ones that tick will be used for countdown clocks.
+var frames = [
+  new KairosTimeFrame('beforeStart')
+    .setEndsAt('saleStart')
+    .setTicksEvery('1 minute')
+    .setRelativeTo('saleStart'),
+  new KairosTimeFrame('newSale')
+    .setBeginsAt('saleStart')
+    .setEndsAt('12 hours after saleStart'),
+  new KairosTimeFrame('saleRunning')
+    .setBeginsAt('12 hours after saleStart'),
+    .setEndsAt('24 hours before saleEnd')
+    .setTicksEvery('1 hour')
+    .relativeTo('saleEnd'),
+  new KairosTimeFrame('lastDay')
+    .setBeginsAt('24 hours before saleEnd')
+    .setEndsAt('1 hour before saleEnd')
+    .setTicksEvery('1 hour')
+    .relativeTo('saleEnd'),
+  new KairosTimeFrame('endingSoon')
+    .setBeginsAt('1 hour before saleEnd')
+    .setEndsAt('saleEnd')
+    .setTicksEvery('1 minute')
+    .relativeTo('saleEnd'),
+  new KairosTimeFrame('ended')
+    .setBeginsAt('saleEnd')
+];
 
-    // The frame constructor code above refers to named times that are not
-    // specified in the frames themselves. This way, the collection can be
-    // instantiated and given exact start and end times for the currently
-    // displayed sales. The subscriber is contrived, since our internal code
-    // actually takes the duration provided by the current frame and passes it
-    // to a formatter to display the countdown timers.
-    var frameCollection = new KairosCollection(frames)
-      .extendNamedTimes({
-        saleStart: '2012-01-01 12:00:00',
-        saleEnd: '2012-01-02 18:00:00'
-      })
-      .subscribe('timeFrameBegan', function (frame) {
-        // Display the right message to the customer. Note that this would
-        // actually use a data object within each frame that contains a format
-        // string.
-      });
+// The frame constructor code above refers to named times that are not
+// specified in the frames themselves. This way, the collection can be
+// instantiated and given exact start and end times for the currently
+// displayed sales. The subscriber is contrived, since our internal code
+// actually takes the duration provided by the current frame and passes it
+// to a formatter to display the countdown timers.
+var frameCollection = new KairosCollection(frames)
+  .extendNamedTimes({
+    saleStart: '2012-01-01 12:00:00',
+    saleEnd: '2012-01-02 18:00:00'
+  })
+  .subscribe('timeFrameBegan', function (frame) {
+    // Display the right message to the customer. Note that this would
+    // actually use a data object within each frame that contains a format
+    // string.
+  });
 ```
 
 ## Feature Overview
@@ -191,8 +191,8 @@ but not how we actually implement it in our own codebase.
 Creates a new time frame.
 
 ```javascript
-    new KairosTimeFrame('foo')
-      .start();
+new KairosTimeFrame('foo')
+  .start();
 ```
 
 This frame is now chainable with any of the setters. By default it will begin
@@ -200,10 +200,10 @@ at the epoch in 1970 and run forever, with no ticks. So it won't really do you
 much good at all.
 
 ```javascript
-    new KairosTimeFrame('foo')
-      .setBeginsAt('2012-01-01 12:00:00')
-      .setEndsAt('2012-01-01 18:00:00')
-      .start();
+new KairosTimeFrame('foo')
+  .setBeginsAt('2012-01-01 12:00:00')
+  .setEndsAt('2012-01-01 18:00:00')
+  .start();
 ```
 
 Now you have a time frame that will begin at noon and end at 6pm on the first
@@ -215,10 +215,10 @@ nothing will happen.
 Hash notation can also be used, like this:
 
 ```javascript
-    new KairosTimeFrame('foo', {
-      beginsAt: '2012-01-01 12:00:00',
-      endsAt: '2012-01-01 18:00:00'
-    }).start();
+new KairosTimeFrame('foo', {
+  beginsAt: '2012-01-01 12:00:00',
+  endsAt: '2012-01-01 18:00:00'
+}).start();
 ```
 
 Times can be specified in a number of ways:
@@ -240,15 +240,15 @@ and then starts them in a separate statement, providing the frame with the two
 named times.
 
 ```javascript
-    var tf = new KairosTimeFrame('foo', {
-      beginsAt: 'bar',
-      endsAt: 'baz'
-    });
+var tf = new KairosTimeFrame('foo', {
+  beginsAt: 'bar',
+  endsAt: 'baz'
+});
 
-    tf.extendNamedTimes({
-      bar: '2012-01-01 12:00:00',
-      baz: '2012-01-01 18:00:00'
-    }).start();
+tf.extendNamedTimes({
+  bar: '2012-01-01 12:00:00',
+  baz: '2012-01-01 18:00:00'
+}).start();
 ```
 
 ### Natural Language
@@ -257,27 +257,27 @@ Using natural language syntax allows for much more readable code. The above
 example could also be written:
 
 ```javascript
-    var tf = new KairosTimeFrame('foo', {
-      beginsAt: 'bar',
-      endsAt: '6 hours after bar'
-    });
+var tf = new KairosTimeFrame('foo', {
+  beginsAt: 'bar',
+  endsAt: '6 hours after bar'
+});
 
-    tf.extendNamedTimes({
-      bar: '2012-01-01 12:00:00'
-    }).start();
+tf.extendNamedTimes({
+  bar: '2012-01-01 12:00:00'
+}).start();
 ```
 
 The begin time behaves like another named time, so you can also do this:
 
 ```javascript
-    var tf = new KairosTimeFrame('foo', {
-      beginsAt: 'bar',
-      endsAt: '6 hours after beginsAt'
-    });
+var tf = new KairosTimeFrame('foo', {
+  beginsAt: 'bar',
+  endsAt: '6 hours after beginsAt'
+});
 
-    tf.extendNamedTimes({
-      bar: '2012-01-01 12:00:00'
-    }).start();
+tf.extendNamedTimes({
+  bar: '2012-01-01 12:00:00'
+}).start();
 ```
 
 ### LDML Syntax
@@ -285,24 +285,24 @@ The begin time behaves like another named time, so you can also do this:
 LDML can also be used, combined with natural language.
 
 ```javascript
-    var tf = new KairosTimeFrame('foo', {
-      beginsAt: 'bar',
-      endsAt: 'PT 6H after bar' // or 'pt 6h after bar' or '6h after bar'
-    });
+var tf = new KairosTimeFrame('foo', {
+  beginsAt: 'bar',
+  endsAt: 'PT 6H after bar' // or 'pt 6h after bar' or '6h after bar'
+});
 
-    tf.extendNamedTimes({
-      bar: '2012-01-01 12:00:00'
-    }).start();
+tf.extendNamedTimes({
+  bar: '2012-01-01 12:00:00'
+}).start();
 ```
 
 Of course, the named time is just a stand-in for an explicit time, so that time
 can be used directly instead.
 
 ```javascript
-    var tf = new KairosTimeFrame('foo', {
-      beginsAt: 1325437200000,
-      endsAt: 'PT 6H after 1325437200000'
-    }).start();
+var tf = new KairosTimeFrame('foo', {
+  beginsAt: 1325437200000,
+  endsAt: 'PT 6H after 1325437200000'
+}).start();
 ```
 
 ### Interpolation
@@ -310,13 +310,13 @@ can be used directly instead.
 Interpolation can be used instead of using exact times.
 
 ```javascript
-    var tf = new KairosTimeFrame('foo', {
-      beginsAt: 'bar',
-      endsAt: '50% between bar and baz' // or '0.5 between bar and baz'
-    }).extendNamedTimes({
-      bar: '2012-01-01 12:00:00',
-      baz: '2012-01-02 00:00:00'
-    }).start();
+var tf = new KairosTimeFrame('foo', {
+  beginsAt: 'bar',
+  endsAt: '50% between bar and baz' // or '0.5 between bar and baz'
+}).extendNamedTimes({
+  bar: '2012-01-01 12:00:00',
+  baz: '2012-01-02 00:00:00'
+}).start();
 ```
 
 Interpolation can be a percentage string, or a floating point number ('0.4
@@ -330,20 +330,20 @@ which has a getRelativeDuration() method that will retrieve the milliseconds
 relative to the relativeTo time.
 
 ```javascript
-    var tf = new KairosTimeFrame('foo', {
-      beginsAt: '2012-01-01 12:00:00',
-      endsAt: '2012-01-01 18:00:00',
-      ticksEvery: '1 minute',
-      relativeTo: 'endsAt'
-    }).start();
+var tf = new KairosTimeFrame('foo', {
+  beginsAt: '2012-01-01 12:00:00',
+  endsAt: '2012-01-01 18:00:00',
+  ticksEvery: '1 minute',
+  relativeTo: 'endsAt'
+}).start();
 ```
 
 Then you can then subscribe to the events:
 
 ```javascript
-    tf.subscribe('ticked', function (frame) {
-      console.log(frame.getRelativeDuration() * 60 * 60 + ' minutes left!');
-    });
+tf.subscribe('ticked', function (frame) {
+  console.log(frame.getRelativeDuration() * 60 * 60 + ' minutes left!');
+});
 ```
 
 The ticksEvery field can be in milliseconds, LDML, or natural language syntax,
@@ -360,19 +360,19 @@ published. If muted, the start and end events for the timeframe will still be
 published, but ticks will not.
 
 ```javascript
-    tf = new KairosTimeFrame('foo', {
-      beginsAt: '2012-01-01 12:00:00',
-      endsAt: '2012-01-01 18:00:00',
-      ticksEvery: '1 second',
-      relativeTo: 'endsAt'
-    }).start();
+tf = new KairosTimeFrame('foo', {
+  beginsAt: '2012-01-01 12:00:00',
+  endsAt: '2012-01-01 18:00:00',
+  ticksEvery: '1 second',
+  relativeTo: 'endsAt'
+}).start();
 ```
 
 If start() occurs before or during the frame, a begin event will be published.
 Tick events will begin firing immediately also, once per second.
 
 ```javascript
-    tf.mute();
+tf.mute();
 ```
 
 Tick events will not be published anymore. If the endsAt time is reached, the
@@ -380,7 +380,7 @@ ended event will be published, and the frame will be history. If the endsAt
 time has not been reached,
 
 ```javascript
-    tf.unmute();
+tf.unmute();
 ```
 
 will resume the publishing of tick events until the endsAt time is reached.
@@ -392,11 +392,11 @@ every half hour begins at 3:15, the next tick will occur at 3:45, within the
 general margin of error that setTimeout requires us to accept.
 
 ```javascript
-    var tf = new KairosTimeFrame({
-      beginsAt: '2012-01-01 15:15:00',
-      endsAt: '2012-01-01 14:15:00',
-      ticksEvery: '30 minutes'
-    }).start();
+var tf = new KairosTimeFrame({
+  beginsAt: '2012-01-01 15:15:00',
+  endsAt: '2012-01-01 14:15:00',
+  ticksEvery: '30 minutes'
+}).start();
 ```
 
 This will publish tick events at 3:15pm, 3:45pm, and 4:15pm.
@@ -405,12 +405,12 @@ You might want to sync to the nearest full-value unit on the user's machine,
 however.
 
 ```javascript
-    var tf = new KairosTimeFrame({
-      beginsAt: '2012-01-01 15:15:00',
-      endsAt: '2012-01-01 14:15:00',
-      ticksEvery: '30 minutes',
-      syncsTo: '30 minutes'
-    }).start();
+var tf = new KairosTimeFrame({
+  beginsAt: '2012-01-01 15:15:00',
+  endsAt: '2012-01-01 14:15:00',
+  ticksEvery: '30 minutes',
+  syncsTo: '30 minutes'
+}).start();
 ```
 
 This will publish tick events at 3:30pm, 4:00pm, and 4:30pm.
@@ -424,9 +424,9 @@ might tick at
 Kairos by default syncs times to the correct interval, so that:
 
 ```javascript
-    var tf = new KairosTimeFrame({
-      ticksEvery: '1 second'
-    }).start();
+var tf = new KairosTimeFrame({
+  ticksEvery: '1 second'
+}).start();
 ```
 
 will tick at
@@ -438,10 +438,10 @@ milliseconds of the interval specified. If we started the timer 500ms after
 the epoch (and had a time machine):
 
 ```javascript
-    var tf = new KairosTimeFrame({
-      beginsAt: 500,
-      ticksEvery: '1 second'
-    }).start();
+var tf = new KairosTimeFrame({
+  beginsAt: 500,
+  ticksEvery: '1 second'
+}).start();
 ```
 
 the timer might tick at
@@ -455,11 +455,11 @@ However, we might want to sync to the user's clock, and tick exactly on the
 second. In this case, syncing can be turned on using the syncsTo option:
 
 ```javascript
-    var tf = new KairosFrame({
-      beginsAt: 500,
-      ticksEvery: '1 second',
-      syncsTo: '1 second'
-    }).start();
+var tf = new KairosFrame({
+  beginsAt: 500,
+  ticksEvery: '1 second',
+  syncsTo: '1 second'
+}).start();
 ```
 
 Even though the start time is at 500ms after the epoch, the syncsTo option will
@@ -477,15 +477,15 @@ Frames can include a data object which will be passed to all of the published
 events.
 
 ```javascript
-    var tf = new KairosTimeFrame('foo')
-      .setData({
-        bar: 1,
-        baz: 2
-      });
+var tf = new KairosTimeFrame('foo')
+  .setData({
+    bar: 1,
+    baz: 2
+  });
 
-    tf.subscribe('ended', function (frame) {
-      console.log(frame.getData());
-    });
+tf.subscribe('ended', function (frame) {
+  console.log(frame.getData());
+});
 ```
 
 This is useful for passing along format strings or other relevant information.
@@ -498,15 +498,15 @@ here are the main methods available. Most of the methods simply proxy through
 to the same methods in the collection's time frames.
 
 ```javascript
-    var kc = new KairosCollection([KairosTimeFrame]);
+var kc = new KairosCollection([KairosTimeFrame]);
 
-    kc.start(); // starts all the frames in the collection
-    kc.stop(); // stops all the frames in the collection
-    kc.mute(); // stops publishing tick events for all the frames
-    kc.unmute(); // restarts publishing tick events for all the frames
-    kc.subscribe(String, Function); // subscribes to a collection event
-    kc.unsubscribe([String, Function]); // unsubscribes from a collection event using a handle
-    kc.pushTimeFrame(KairosTimeFrame); // pushes a time frame into the collection
+kc.start(); // starts all the frames in the collection
+kc.stop(); // stops all the frames in the collection
+kc.mute(); // stops publishing tick events for all the frames
+kc.unmute(); // restarts publishing tick events for all the frames
+kc.subscribe(String, Function); // subscribes to a collection event
+kc.unsubscribe([String, Function]); // unsubscribes from a collection event using a handle
+kc.pushTimeFrame(KairosTimeFrame); // pushes a time frame into the collection
 ```
 
 ### Events
