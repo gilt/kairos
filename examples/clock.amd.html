@@ -19,10 +19,15 @@
   </head>
   <body>
     <div class="clock"></div>
+    <script src="http://requirejs.org/docs/release/2.1.5/minified/require.js"></script>
     <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
     <script src="http://underscorejs.org/underscore-min.js"></script>
     <script src="../dist/kairos.js"></script>
     <script>
+      define('underscore', function () { // underscore v1.3.3 doesn't have an amd stub
+        return _;
+      });
+
       $(function () {
         function fill2 (txt) {
           if (2 > txt.length) {
@@ -31,14 +36,16 @@
           return txt;
         }
 
-        var timeFrame = new KairosTimeFrame('clock', {
-          ticksEvery: '1s',
-          relativeTo: 'epoch',
-          syncTo: '1s'
-        }).subscribe('ticked', function (frame) {
-          var date = new Date(-frame.getRelativeDuration());
-          $('.clock').text(date.getHours() + ':' + fill2(date.getMinutes().toString()) + ':' + fill2(date.getSeconds().toString()));
-        }).start();
+        require(['kairos_time_frame'], function (KairosTimeFrame) {
+          var timeFrame = new KairosTimeFrame('clock', {
+            ticksEvery: '1s',
+            relativeTo: 'epoch',
+            syncTo: '1s'
+          }).subscribe('ticked', function (frame) {
+            var date = new Date(-frame.getRelativeDuration());
+            $('.clock').text(date.getHours() + ':' + fill2(date.getMinutes().toString()) + ':' + fill2(date.getSeconds().toString()));
+          }).start();
+        });
       });
     </script>
   </body>

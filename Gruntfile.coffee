@@ -47,6 +47,19 @@ module.exports = (grunt) ->
           'lib/kairos_collection.js'
         ]
         dest: 'dist/<%= pkg.name %>.js'
+    replace:
+      dist:
+        options:
+          variables:
+            'version': '<%= pkg.version %>'
+        files: [
+          {
+            expand: true,
+            flatten: true,
+            src: ['dist/*.js'],
+            dest: 'dist/'
+          }
+        ]
     uglify:
       options:
         banner: '/*! <%= pkg.name %> v<%= pkg.version %> <%= grunt.template.today("yyyy-mm-dd") %> */\n'
@@ -70,7 +83,8 @@ module.exports = (grunt) ->
   grunt.loadNpmTasks 'grunt-contrib-uglify'
   grunt.loadNpmTasks 'grunt-karma'
   grunt.loadNpmTasks 'grunt-release'
+  grunt.loadNpmTasks 'grunt-replace'
 
   grunt.registerTask 'default', ['karma:specs']
-  grunt.registerTask 'build', ['test', 'clean:build', 'concat', 'uglify']
+  grunt.registerTask 'build', ['test', 'clean:build', 'concat', 'replace', 'uglify']
   grunt.registerTask 'test', ['jshint', 'karma:once']

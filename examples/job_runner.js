@@ -1,7 +1,6 @@
 //noinspection JSValidateTypes
 var
-  kairos = require('../dist/kairos'),
-
+  kairos = require('../lib/kairos'),
   collection = new kairos.KairosCollection([
     new kairos.KairosTimeFrame('oneTimeJob')
       .setBeginsAt('60s after now')
