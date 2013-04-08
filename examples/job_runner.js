@@ -3,12 +3,12 @@ var
   kairos = require('../lib/kairos'),
   collection = new kairos.KairosCollection([
     new kairos.KairosTimeFrame('oneTimeJob')
-      .setBeginsAt('60s after now')
+      .beginsAt('60s after now')
       .setData({
         foo: 'bar'
       }),
     new kairos.KairosTimeFrame('periodicJob')
-      .setTicksEvery('5 seconds')
+      .ticksEvery('5 seconds')
       .setData({
         x: 1337,
         y: 11
@@ -25,7 +25,7 @@ var
 
 collection.pushTimeFrame(
   new kairos.KairosTimeFrame('newJob')
-    .setBeginsAt('PT15S from now')
+    .beginsAt('PT15S from now')
 );
 
 collection.start();

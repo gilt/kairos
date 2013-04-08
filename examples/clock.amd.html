@@ -39,7 +39,7 @@
         require(['kairos_time_frame'], function (KairosTimeFrame) {
           var timeFrame = new KairosTimeFrame('clock', {
             ticksEvery: '1s',
-            relativeTo: 'epoch',
+            ticksRelativeTo: 'epoch',
             syncTo: '1s'
           }).subscribe('ticked', function (frame) {
             var date = new Date(-frame.getRelativeDuration());
