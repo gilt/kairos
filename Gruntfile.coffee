@@ -34,6 +34,9 @@ module.exports = (grunt) ->
       specs: {}
       once:
         singleRun: true
+      amd:
+        configFile: 'karma.amd.conf.js'
+        singleRun: true
     clean:
       build: ['dist', 'coverage', 'test-results.xml']
     concat:
@@ -87,4 +90,4 @@ module.exports = (grunt) ->
 
   grunt.registerTask 'default', ['karma:specs']
   grunt.registerTask 'build', ['test', 'clean:build', 'concat', 'replace', 'uglify']
-  grunt.registerTask 'test', ['jshint', 'karma:once']
+  grunt.registerTask 'test', ['jshint', 'karma:once', 'karma:amd']

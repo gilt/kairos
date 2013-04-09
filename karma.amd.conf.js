@@ -15,18 +15,18 @@ frameworks = ['jasmine'];
 files = [
   JASMINE,
   JASMINE_ADAPTER,
-  'node_modules/underscore/underscore.js',
-  'lib/kairos_errors.js',
-  'lib/kairos_time_frame.js',
-  'lib/kairos_collection.js',
-  'spec/**/*.spec.js'
+  REQUIRE,
+  REQUIRE_ADAPTER,
+
+  {pattern: 'node_modules/underscore/underscore.js', included: false},
+  {pattern: 'spec/kairos_amd.spec.js', included: false},
+  {pattern: 'lib/*.js', included: false},
+
+  'spec/amd_main.js'
 ];
 
 // list of files to exclude
-exclude = [
-  'spec/amd_main.js',
-  'spec/kairos_amd.spec.js'
-];
+exclude = [];
 
 // use dots reporter, as travis terminal does not support escaping sequences
 // possible values: 'dots', 'progress', 'junit', 'teamcity'
