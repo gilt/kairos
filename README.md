@@ -7,7 +7,7 @@ and can optionally tick at a given interval. Notifications are published
 when frames begin, end, and tick.
 
 A KairosCollection object can roll up several frames, allowing them to be
-stopped, started, and modified simulatenously.
+stopped, started, and modified simultaneously.
 
 Kairos can be used for many purposes: a clock or countdown, a calendar, a job
 runner, or even part of a game engine. One of our use cases at Gilt is the
@@ -52,25 +52,26 @@ until lunch:
 
 ```javascript
 var lunchFrame = new KairosTimeFrame('lunchFrame') // the name of this frame is 'lunchFrame'
-  .setBeginsAt('now') // 'now' is a built-in time corresponding to the time of the instance construction
-  .setEndsAt('lunch') // 'lunch' is a named time that is not yet available
-  .setTicksEvery('1 minute') // ticks will be published at 1-minute intervals
-  .setRelativeTo('lunch') // ticks will be published relative to named time 'lunch'
+  .beginsAt('now') // 'now' is a built-in time corresponding to the time of the instance construction
+  .endsAt('lunch') // 'lunch' is a named time that is not yet available
+  .ticksEvery('1 minute') // ticks will be published at 1-minute intervals
+  .ticksRelativeTo('lunch') // ticks will be published relative to named time 'lunch'
   .extendNamedTimes({
-    lunch: '2012-01-01 12:00:00' // now we provide the named time 'lunch'
+    lunch: '2012-01-01 12:00:00' // now we provide the named time 'lunch' to the frame
   }).start(); // and finally start the frame
 ```
 
-It will publish ticks every minute from the time the page loads until the named
-time 'lunch' occurs. The frame contains a method getRelativeDuration() which
-provides access to the milliseconds remaining until lunch.
+It will publish ticks every minute from the time the page loads ('now') until
+the named time 'lunch' occurs. The frame instance exposes a method
+getRelativeDuration() which provides access to the milliseconds remaining until
+lunch.
 
 ### Slightly More Complex Example Using a Collection
 
 Let's make a more complex example, with three unique time frames prior to
 lunch. We'll wait to provide the named time 'lunch' until we make the
-collection, so each frame can share it. We'll also, of course, wait to start
-the frames and use the collection to start all of them at once.
+collection, so each frame can share it. We'll also wait to start the frames
+and use the collection to start all of them at once.
 
 ```javascript
 // This frame begins when the page loads, and ends two minutes before a
@@ -78,10 +79,10 @@ the frames and use the collection to start all of them at once.
 // the collection that holds the frame. The 'now' named time is provided
 // by default to all frames, along with 'never' and 'epoch'.
 var beforeLunchFrame = new KairosTimeFrame('beforeLunch')
-  .setBeginsAt('now')
-  .setEndsAt('2 minutes before lunch')
-  .setTicksEvery('1 minute')
-  .setRelativeTo('lunch')
+  .beginsAt('now')
+  .endsAt('2 minutes before lunch')
+  .ticksEvery('1 minute')
+  .ticksRelativeTo('lunch')
   .extendNamedTimes({
     lunch: '2012-01-01 12:00:00'
   });
@@ -91,15 +92,15 @@ var beforeLunchFrame = new KairosTimeFrame('beforeLunch')
 // events will make the frame available, and its getRelativeDuration()
 // method will provide the time countdown relative to the 'lunch' event.
 var almostLunchFrame = new KairosTimeFrame('almostLunch')
-  .setBeginsAt('2 minutes before lunch')
-  .setEndsAt('lunch')
-  .setTicksEvery('1 second')
-  .setRelativeTo('lunch');
+  .beginsAt('2 minutes before lunch')
+  .endsAt('lunch')
+  .ticksEvery('1 second')
+  .ticksRelativeTo('lunch');
 
 // This frame begins at the named time 'lunch', and will be active for an
 // infinite time after that.
 var lunchtimeFrame = new KairosTimeFrame('lunchtime')
-  .setBeginsAt('lunch');
+  .beginsAt('lunch');
 
 // This is a collection to hold all three frames. It allows named times to
 // be provided to all frames at once, and allows subscribers to be attached
@@ -141,29 +142,29 @@ but not how we actually implement it in our own codebase.
 // times. The ones that tick will be used for countdown clocks.
 var frames = [
   new KairosTimeFrame('beforeStart')
-    .setEndsAt('saleStart')
-    .setTicksEvery('1 minute')
-    .setRelativeTo('saleStart'),
+    .endsAt('saleStart')
+    .ticksEvery('1 minute')
+    .ticksRelativeTo('saleStart'),
   new KairosTimeFrame('newSale')
-    .setBeginsAt('saleStart')
-    .setEndsAt('12 hours after saleStart'),
+    .beginsAt('saleStart')
+    .endsAt('12 hours after saleStart'),
   new KairosTimeFrame('saleRunning')
-    .setBeginsAt('12 hours after saleStart'),
-    .setEndsAt('24 hours before saleEnd')
-    .setTicksEvery('1 hour')
-    .relativeTo('saleEnd'),
+    .beginsAt('12 hours after saleStart'),
+    .endsAt('24 hours before saleEnd')
+    .ticksEvery('1 hour')
+    .ticksRelativeTo('saleEnd'),
   new KairosTimeFrame('lastDay')
-    .setBeginsAt('24 hours before saleEnd')
-    .setEndsAt('1 hour before saleEnd')
-    .setTicksEvery('1 hour')
-    .relativeTo('saleEnd'),
+    .beginsAt('24 hours before saleEnd')
+    .endsAt('1 hour before saleEnd')
+    .ticksEvery('1 hour')
+    .ticksRelativeTo('saleEnd'),
   new KairosTimeFrame('endingSoon')
-    .setBeginsAt('1 hour before saleEnd')
-    .setEndsAt('saleEnd')
-    .setTicksEvery('1 minute')
-    .relativeTo('saleEnd'),
+    .beginsAt('1 hour before saleEnd')
+    .endsAt('saleEnd')
+    .ticksEvery('1 minute')
+    .ticksRelativeTo('saleEnd'),
   new KairosTimeFrame('ended')
-    .setBeginsAt('saleEnd')
+    .beginsAt('saleEnd')
 ];
 
 // The frame constructor code above refers to named times that are not
@@ -180,7 +181,7 @@ var frameCollection = new KairosCollection(frames)
   .subscribe('timeFrameBegan', function (frame) {
     // Display the right message to the customer. Note that this would
     // actually use a data object within each frame that contains a format
-    // string.
+    // string, and pass it through a formatter to show countdown clocks.
   });
 ```
 
@@ -201,8 +202,8 @@ much good at all.
 
 ```javascript
 new KairosTimeFrame('foo')
-  .setBeginsAt('2012-01-01 12:00:00')
-  .setEndsAt('2012-01-01 18:00:00')
+  .beginsAt('2012-01-01 12:00:00')
+  .endsAt('2012-01-01 18:00:00')
   .start();
 ```
 
@@ -328,14 +329,14 @@ between bar and baz'). This example will have an end time of 6pm.
 Frames can send tick events at a specified interval. This is useful for a clock
 or a countdown application. The tick event contains the reference to the frame,
 which has a getRelativeDuration() method that will retrieve the milliseconds
-relative to the relativeTo time.
+relative to the ticksRelativeTo time.
 
 ```javascript
 var tf = new KairosTimeFrame('foo', {
   beginsAt: '2012-01-01 12:00:00',
   endsAt: '2012-01-01 18:00:00',
   ticksEvery: '1 minute',
-  relativeTo: 'endsAt'
+  ticksRelativeTo: 'endsAt'
 }).start();
 ```
 
@@ -348,10 +349,10 @@ tf.subscribe('ticked', function (frame) {
 ```
 
 The ticksEvery field can be in milliseconds, ISO-8601, or natural language
-syntax, and the relativeTo field can be a named time, the beginsAt or endsAt
+syntax, and the ticksRelativeTo field can be a named time, the beginsAt or endsAt
 times, or a Date, Unix timestamp, or Date-constructable string.
 
-If relativeTo is not provided, its default is the beginsAt time, since the
+If ticksRelativeTo is not provided, its default is the beginsAt time, since the
 default endsAt time is Infinity, which is hard to count from.
 
 ### Muting
@@ -365,7 +366,7 @@ tf = new KairosTimeFrame('foo', {
   beginsAt: '2012-01-01 12:00:00',
   endsAt: '2012-01-01 18:00:00',
   ticksEvery: '1 second',
-  relativeTo: 'endsAt'
+  ticksRelativeTo: 'endsAt'
 }).start();
 ```
 
@@ -402,8 +403,8 @@ var tf = new KairosTimeFrame({
 
 This will publish tick events at 3:15pm, 3:45pm, and 4:15pm.
 
-You might want to sync to the nearest full-value unit on the user's machine,
-however.
+You might, instead, want to sync to the nearest full-value unit on the user's
+machine.
 
 ```javascript
 var tf = new KairosTimeFrame({
@@ -430,7 +431,7 @@ var tf = new KairosTimeFrame({
 }).start();
 ```
 
-will tick at
+will tick at, perhaps,
 
     0, 1005, 2010, 3006, 4011, 5001, 6009
 
@@ -468,9 +469,10 @@ cause the ticks to occur perhaps at:
 
     1002, 2011, 3009, 4013, 5000, 6002
 
-To summarize, ticks will always occur at the correct interval; the syncsTo
-option gives you the ability to coordinate the first tick, and thus the
-subsequent ticks, with the user's clock.
+To summarize, ticks will always occur at the correct interval, minus normal
+unavoidable setTimeout variation; and the syncsTo option gives you the ability
+to coordinate the first tick, and thus the subsequent ticks, with the user's
+clock.
 
 ### Data
 
@@ -494,9 +496,9 @@ This is useful for passing along format strings or other relevant information.
 ## KairosCollection
 
 The KairosCollection constructor takes an array of time frames, and allows you
-to interact with all of them simultaneously. The API is detailed below, but
-here are the main methods available. Most of the methods simply proxy through
-to the same methods in the collection's time frames.
+to interact with all of them simultaneously. The API is detailed in the wiki,
+but here are the main methods available. Most of the methods simply proxy
+through to the same methods in the collection's time frame instances.
 
 ```javascript
 var kc = new KairosCollection([KairosTimeFrame]);
