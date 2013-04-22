@@ -55,7 +55,7 @@ var lunchFrame = new KairosTimeFrame('lunchFrame') // the name of this frame is 
   .beginsAt('now') // 'now' is a built-in time corresponding to the time of the instance construction
   .endsAt('lunch') // 'lunch' is a named time that is not yet available
   .ticksEvery('1 minute') // ticks will be published at 1-minute intervals
-  .ticksRelativeTo('lunch') // ticks will be published relative to named time 'lunch'
+  .ticksRelativeTo('lunch') // the frame's getRelativeDuration() will be relative to named time 'lunch'
   .extendNamedTimes({
     lunch: '2012-01-01 12:00:00' // now we provide the named time 'lunch' to the frame
   }).start(); // and finally start the frame
