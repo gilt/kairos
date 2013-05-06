@@ -90,4 +90,4 @@ module.exports = (grunt) ->
 
   grunt.registerTask 'default', ['karma:specs']
   grunt.registerTask 'build', ['test', 'clean:build', 'concat', 'replace', 'uglify']
-  grunt.registerTask 'test', ['jshint', 'karma:once', 'karma:amd']
+  grunt.registerTask 'test', ['jshint', 'karma:amd', 'karma:once']
