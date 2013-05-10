@@ -1,4 +1,4 @@
-/*! kairos v0.3.0 2013-04-08 */
+/*! kairos v0.3.1 2013-05-10 */
 /* global _: false, define: false */
 (function (exports) {
 
@@ -169,26 +169,6 @@
       ),
 
       NATURAL_LANGUAGE_DURATION_PARSER = /(\d+(?:[\\.,]\\d+)?)\s*(y(?:ear)?s?)?(mon(?:th)?s?)?(d(?:ay)?s?)?(h(?:our)?s?)?(min(?:ute)?s?)?(s(?:econd)?s)?(m(?:illi)?s(?:econds?)?)?/gi;
-
-    function logChannelFactory (channel) {
-      // Have to do some fancy shit here since all the console methods are native,
-      // you can't use apply on them in all browsers and you can't alias them in
-      // all browsers.
-      return function (text, args) {
-        if (exports.console && console[channel]) { // Allow late binding, e.g. Firebug
-          args = [].splice.call(arguments, 1);
-          if (0 === args.length) { // Handle the simple use-case first, to avoid the possibility of an error, and the associated overhead
-            console[channel](text);
-          } else {
-            try { // This part is in a try-catch since in several browsers, you're not allowed to use apply on a native method
-              console[channel].apply(null, [].splice.call(arguments, 0));
-            } catch (e) { // In those cases, just dump the args
-              console[channel](text, args);
-            }
-          }
-        }
-      };
-    }
 
     /**
      * Normalizes a duration in one of several forms into a simple number of ms.
@@ -1007,7 +987,7 @@
        *   myTimeFrame.beginsAt('1 hour after noon')
        */
       beginsAt: function (value) {
-        if (!value) {
+        if (undefined === value || null === value) {
           throw new errors.MissingParameter();
         } else if (!this.isStarted()) {
           this._private(privateKey).beginsAt = value;
@@ -1079,7 +1059,7 @@
        *   myTimeFrame.endsAt('1 hour after noon')
        */
       endsAt: function (value) {
-        if (!value) {
+        if (undefined === value || null === value) {
           throw new errors.MissingParameter();
         } else if (!this.isStarted()) {
           this._private(privateKey).endsAt = value;
@@ -1141,7 +1121,7 @@
        *   myTimeFrame.ticksEvery('1 second')
        */
       ticksEvery: function (value) {
-        if (!value) {
+        if (undefined === value || null === value) {
           throw new errors.MissingParameter();
         } else if (!this.isStarted()) {
           this._private(privateKey).ticksEvery = value;
@@ -1214,7 +1194,7 @@
        *   myTimeFrame.ticksRelativeTo('1 hour after noon')
        */
       ticksRelativeTo: function (value) {
-        if (!value) {
+        if (undefined === value || null === value) {
           throw new errors.MissingParameter();
         } else if (!this.isStarted()) {
           this._private(privateKey).ticksRelativeTo = value;
@@ -1276,7 +1256,7 @@
        *   myTimeFrame.syncsTo('1 hour after noon')
        */
       syncsTo: function (value) {
-        if (!value) {
+        if (undefined === value || null === value) {
           throw new errors.MissingParameter();
         } else if (!this.isStarted()) {
           this._private(privateKey).syncsTo = value;
@@ -1395,7 +1375,7 @@
        * @throws {MissingParameter|ImmutableError}
        */
       setData: function (value) {
-        if (!value) {
+        if (undefined === value || null === value) {
           throw new errors.MissingParameter();
         } else if (!this.isStarted()) {
           this._private(privateKey).data = value;
@@ -1418,12 +1398,12 @@
         return this.getTicksRelativeTo() - (new Date()).getTime();
       },
 
-      version: '0.3.0'
+      version: '0.3.1'
     });
 
     KairosTimeFrame.prototype.toJson = KairosTimeFrame.prototype.toJSON;
 
-    KairosTimeFrame.version = '0.3.0';
+    KairosTimeFrame.version = '0.3.1';
 
     return KairosTimeFrame;
   }
@@ -1856,12 +1836,12 @@
         }
       },
 
-      version: '0.3.0'
+      version: '0.3.1'
     });
 
     KairosCollection.prototype.toJson = KairosCollection.prototype.toJSON;
 
-    KairosCollection.version = '0.3.0';
+    KairosCollection.version = '0.3.1';
 
     return KairosCollection;
   }
