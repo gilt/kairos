@@ -1,4 +1,4 @@
-/* global KairosTimeFrame: false, KairosCollection: false, _: false, jasmine: false, describe: false, xdescribe: false, it: false, xit: false, expect: false, waitsFor: false, runs: false */
+/*global KairosTimeFrame: false, KairosCollection: false, KairosEvent: false, _: false, jasmine: false, describe: false, xdescribe: false, it: false, xit: false, expect: false, waitsFor: false, runs: false */
 describe('KairosTimeFrame', function () {
   // NOTE:
   //   Several of these tests are to ensure that things happen at the correct
@@ -136,7 +136,6 @@ describe('KairosTimeFrame', function () {
       beginsAt: '1000',// simplest possible non-normal values
       endsAt: '2000',
       ticksEvery: '3000',
-      ticksRelativeTo: '4000',
       syncsTo: '5000',
       namedTimes: {
         foo: '6000'
@@ -155,15 +154,15 @@ describe('KairosTimeFrame', function () {
       expect(timeFrame.getBeginsAt({ originalValue: true })).toBe('1000');
     });
 
-    it('should expose a setter for the beginsAt parameter', function () {
-      expect(timeFrame.beginsAt).toEqual(jasmine.any(Function));
+    it('should not expose a setter for the beginsAt parameter', function () {
+      expect(timeFrame.beginsAt).toBeUndefined();
     });
 
-    it('should throw an error if you call the beginsAt setter with no value', function () {
+    xit('should throw an error if you call the beginsAt setter with no value', function () {
       expect(timeFrame.beginsAt).toThrow();
     });
 
-    it('should make the beginsAt setter chainable', function () {
+    xit('should make the beginsAt setter chainable', function () {
       expect(timeFrame.beginsAt(1500)).toBe(timeFrame);
     });
 
@@ -176,15 +175,15 @@ describe('KairosTimeFrame', function () {
       expect(timeFrame.getEndsAt({ originalValue: true })).toBe('2000');
     });
 
-    it('should expose a setter for the endsAt parameter', function () {
-      expect(timeFrame.endsAt).toEqual(jasmine.any(Function));
+    it('should not expose a setter for the endsAt parameter', function () {
+      expect(timeFrame.endsAt).toBeUndefined();
     });
 
-    it('should throw an error if you call the endsAt setter with no value', function () {
+    xit('should throw an error if you call the endsAt setter with no value', function () {
       expect(timeFrame.endsAt).toThrow();
     });
 
-    it('should make the endsAt setter chainable', function () {
+    xit('should make the endsAt setter chainable', function () {
       expect(timeFrame.endsAt(2500)).toBe(timeFrame);
     });
 
@@ -197,37 +196,16 @@ describe('KairosTimeFrame', function () {
       expect(timeFrame.getTicksEvery({ originalValue: true })).toBe('3000');
     });
 
-    it('should expose a setter for the ticksEvery parameter', function () {
-      expect(timeFrame.ticksEvery).toEqual(jasmine.any(Function));
+    it('should not expose a setter for the ticksEvery parameter', function () {
+      expect(timeFrame.ticksEvery).toBeUndefined();
     });
 
-    it('should throw an error if you call the ticksEvery setter with no value', function () {
+    xit('should throw an error if you call the ticksEvery setter with no value', function () {
       expect(timeFrame.ticksEvery).toThrow();
     });
 
-    it('should make the ticksEvery setter chainable', function () {
+    xit('should make the ticksEvery setter chainable', function () {
       expect(timeFrame.ticksEvery(3500)).toBe(timeFrame);
-    });
-
-    it('should expose a getter for the (normalized) ticksRelativeTo parameter', function () {
-      expect(timeFrame.getTicksRelativeTo).toEqual(jasmine.any(Function));
-      expect(timeFrame.getTicksRelativeTo()).toBe(4000);
-    });
-
-    it('should expose a getter for the original ticksRelativeTo parameter', function () {
-      expect(timeFrame.getTicksRelativeTo({ originalValue: true })).toBe('4000');
-    });
-
-    it('should expose a setter for the ticksRelativeTo parameter', function () {
-      expect(timeFrame.ticksRelativeTo).toEqual(jasmine.any(Function));
-    });
-
-    it('should throw an error if you call the ticksRelativeTo setter with no value', function () {
-      expect(timeFrame.ticksRelativeTo).toThrow();
-    });
-
-    it('should make the ticksRelativeTo setter chainable', function () {
-      expect(timeFrame.ticksRelativeTo(4500)).toBe(timeFrame);
     });
 
     it('should expose a getter for the (normalized) syncsTo parameter', function () {
@@ -239,15 +217,15 @@ describe('KairosTimeFrame', function () {
       expect(timeFrame.getSyncsTo({ originalValue: true })).toBe('5000');
     });
 
-    it('should expose a setter for the syncsTo parameter', function () {
-      expect(timeFrame.syncsTo).toEqual(jasmine.any(Function));
+    it('should not expose a setter for the syncsTo parameter', function () {
+      expect(timeFrame.syncsTo).toBeUndefined();
     });
 
-    it('should throw an error if you call the syncsTo setter with no value', function () {
+    xit('should throw an error if you call the syncsTo setter with no value', function () {
       expect(timeFrame.syncsTo).toThrow();
     });
 
-    it('should make the syncsTo setter chainable', function () {
+    xit('should make the syncsTo setter chainable', function () {
       expect(timeFrame.syncsTo(5500)).toBe(timeFrame);
     });
 
@@ -282,15 +260,15 @@ describe('KairosTimeFrame', function () {
       expect(timeFrame.getData()).toEqual({ foo: 'bar' });
     });
 
-    it('should expose a setter for the data parameter', function () {
-      expect(timeFrame.setData).toEqual(jasmine.any(Function));
+    it('should not expose a setter for the data parameter', function () {
+      expect(timeFrame.setData).toBeUndefined();
     });
 
-    it('should throw an error if you call the data setter with no value', function () {
+    xit('should throw an error if you call the data setter with no value', function () {
       expect(timeFrame.setData).toThrow();
     });
 
-    it('should make the data setter chainable', function () {
+    xit('should make the data setter chainable', function () {
       expect(timeFrame.setData({})).toBe(timeFrame);
     });
 
@@ -319,35 +297,25 @@ describe('KairosTimeFrame', function () {
       expect(typeof timeFrame.isStopped()).toBe('boolean');
     });
 
-    it('should expose a getter for the duration relative to the ticksRelativeTo time', function () {
-      expect(timeFrame.getRelativeDuration).toEqual(jasmine.any(Function));
-      expect(timeFrame.getRelativeDuration()).toEqual(jasmine.any(Number));
+    it('should expose a getter for the duration relative to a named time', function () {
+      expect(timeFrame.getDurationRelativeTo).toEqual(jasmine.any(Function));
+      expect(timeFrame.getDurationRelativeTo('foo')).toEqual(jasmine.any(Number));
 
-      expect(new KairosTimeFrame({
-        ticksRelativeTo: 'now'
-      }).getRelativeDuration()).toBeLessThan(TIMING_PRECISION);
+      expect(new KairosTimeFrame({}).getDurationRelativeTo('now')).toBeLessThan(TIMING_PRECISION);
     });
 
-    it('should throw an error if you attempt to call a setter after start has been called', function () {
+    it('should throw an error if you call the relative duration getter with no value', function () {
+      expect(timeFrame.getDurationRelativeTo).toThrow();
+    });
+
+    it('should throw an error if you attempt to call extendNamedTimes after start has been called', function () {
       timeFrame.start();
 
-      expect(function () { timeFrame.beginsAt(2000); }).toThrow();
-      expect(function () { timeFrame.endsAt(3000); }).toThrow();
-      expect(function () { timeFrame.ticksEvery(4000); }).toThrow();
-      expect(function () { timeFrame.ticksRelativeTo(5000); }).toThrow();
-      expect(function () { timeFrame.syncsTo(6000); }).toThrow();
       expect(function () { timeFrame.extendNamedTimes({ foo: 7000 }); }).toThrow();
-      expect(function () { timeFrame.setData({ foo: 'baz' }); }).toThrow();
     });
 
-    it('should make all setters immutable once start has been called', function () {
-      expect(timeFrame.getBeginsAt()).not.toBe(2000);
-      expect(timeFrame.getEndsAt()).not.toBe(3000);
-      expect(timeFrame.getTicksEvery()).not.toBe(4000);
-      expect(timeFrame.getTicksRelativeTo()).not.toBe(5000);
-      expect(timeFrame.getSyncsTo()).not.toBe(6000);
+    it('should make namedTimes immutable once start has been called', function () {
       expect(timeFrame.getNamedTimes()).not.toEqual({ foo: 7000 });
-      expect(timeFrame.getData()).not.toEqual({ foo: 'baz' });
     });
   });
 
@@ -371,141 +339,72 @@ describe('KairosTimeFrame', function () {
       expect(timeFrame.getEndsAt({ originalValue: true })).toBe('never');
       expect(timeFrame.getEndsAt()).toBe(Infinity);
     });
-
-    it('should default ticksRelativeTo to beginsAt', function () {
-      expect(timeFrame.getTicksRelativeTo({ originalValue: true })).toBe('beginsAt');
-      expect(timeFrame.getTicksRelativeTo()).toBe(0);
-
-      timeFrame.beginsAt(1000);
-
-      expect(timeFrame.getTicksRelativeTo()).toBe(1000);
-    });
   });
 
   describe('Normalization', function () {
     it('should normalize beginsAt', function () {
-      var timeFrame = new KairosTimeFrame({
-        beginsAt: '1000'
-      });
+      expect((new KairosTimeFrame({ beginsAt: '1000' })).getBeginsAt()).toBe(1000);
 
-      expect(timeFrame.getBeginsAt()).toBe(1000);
+      expect((new KairosTimeFrame({ beginsAt: 'epoch' })).getBeginsAt()).toBe(0);
 
-      timeFrame.beginsAt('epoch');
-      expect(timeFrame.getBeginsAt()).toBe(0);
+      expect((new KairosTimeFrame({ beginsAt: '1970-01-02' })).getBeginsAt()).toBe(24 * 60 * 60 * 1000); // might need to be offset by timezone
 
-      timeFrame.beginsAt('1970-01-02');
-      expect(timeFrame.getBeginsAt()).toBe(24 * 60 * 60 * 1000); // might need to be offset by timezone
-
-      timeFrame.beginsAt('1 hour after epoch');
-      expect(timeFrame.getBeginsAt()).toBe(60 * 60 * 1000);
+      expect((new KairosTimeFrame({ beginsAt: '1 hour after epoch' })).getBeginsAt()).toBe(60 * 60 * 1000);
 
       // Skipping additional tests since horo will do so exhaustively
       // Except that for code coverage, we will cover a few additional ones, just this once:
 
-      timeFrame.beginsAt('P1D after epoch');
-      expect(timeFrame.getBeginsAt()).toBe(24 * 60 * 60 * 1000);
+      expect((new KairosTimeFrame({ beginsAt: 'P1D after epoch' })).getBeginsAt()).toBe(24 * 60 * 60 * 1000);
 
-      timeFrame.beginsAt(new Date(100));
-      expect(timeFrame.getBeginsAt()).toBe(100);
+      expect((new KairosTimeFrame({ beginsAt: new Date(100) })).getBeginsAt()).toBe(100);
 
-      timeFrame.beginsAt({ at: 1000 });
-      expect(timeFrame.getBeginsAt()).toBe(1000);
+      expect((new KairosTimeFrame({ beginsAt: { at: 1000 } })).getBeginsAt()).toBe(1000);
 
-      timeFrame.beginsAt('at 5000');
-      expect(timeFrame.getBeginsAt()).toBe(5000);
+      expect((new KairosTimeFrame({ beginsAt: 'at 5000' })).getBeginsAt()).toBe(5000);
 
-      timeFrame.beginsAt('1 hour before epoch');
-      expect(timeFrame.getBeginsAt()).toBe(-60 * 60 * 1000);
+      expect((new KairosTimeFrame({ beginsAt: '1 hour before epoch' })).getBeginsAt()).toBe(-60 * 60 * 1000);
 
-      timeFrame.beginsAt('0.25 between epoch and 1 hour after epoch');
-      expect(timeFrame.getBeginsAt()).toBe(0.25 * 60 * 60 * 1000);
+      expect((new KairosTimeFrame({ beginsAt: '0.25 between epoch and 1 hour after epoch' })).getBeginsAt()).toBe(0.25 * 60 * 60 * 1000);
 
-      timeFrame.beginsAt('75% between epoch and 1 hour after epoch');
-      expect(timeFrame.getBeginsAt()).toBe(0.75 * 60 * 60 * 1000);
+      expect((new KairosTimeFrame({ beginsAt: '75% between epoch and 1 hour after epoch' })).getBeginsAt()).toBe(0.75 * 60 * 60 * 1000);
 
       // bad data:
 
-      timeFrame.beginsAt('garbage');
-      expect(timeFrame.getBeginsAt()).toBe(0);
+      expect((new KairosTimeFrame({ beginsAt: 'garbage' })).getBeginsAt()).toBe(0);
 
-      timeFrame.beginsAt({ starting: 'PT1H' }); // TODO: Should it throw if the data is bad?
-      expect(timeFrame.getBeginsAt()).toBe(0);
+      // TODO: Should it throw if the data is bad?
+      expect((new KairosTimeFrame({ beginsAt: { starting: 'PT1H' } })).getBeginsAt()).toBe(0);
 
-      timeFrame.beginsAt({ interpolated: 0.5 });
-      expect(timeFrame.getBeginsAt()).toBe(0);
+      expect((new KairosTimeFrame({ beginsAt: { interpolated: 0.5 } })).getBeginsAt()).toBe(0);
 
-      timeFrame.beginsAt('2 queens after epoch'); // TODO: Perhaps the part after the 'h' in hours should not be dropped. 'h' or 'hours' or 'hour'?
-      expect(timeFrame.getBeginsAt()).toBe(0);
+      // TODO: Perhaps the part after the 'h' in hours should not be dropped. 'h' or 'hours' or 'hour'?
+      expect((new KairosTimeFrame({ beginsAt: '2 queens after epoch' })).getBeginsAt()).toBe(0);
     });
 
     it('should normalize endsAt', function () {
-      var timeFrame = new KairosTimeFrame({
-        endsAt: '1000'
-      });
+      expect((new KairosTimeFrame({ endsAt: '1000' })).getEndsAt()).toBe(1000);
 
-      expect(timeFrame.getEndsAt()).toBe(1000);
+      expect((new KairosTimeFrame({ endsAt: 'epoch' })).getEndsAt()).toBe(0);
 
-      timeFrame.endsAt('epoch');
+      expect((new KairosTimeFrame({ endsAt: '1970-01-02' })).getEndsAt()).toBe(24 * 60 * 60 * 1000); // might need to be offset by timezone
 
-      expect(timeFrame.getEndsAt()).toBe(0);
-
-      timeFrame.endsAt('1970-01-02');
-
-      expect(timeFrame.getEndsAt()).toBe(24 * 60 * 60 * 1000); // might need to be offset by timezone
-
-      timeFrame.endsAt('1 hour after epoch');
-
-      expect(timeFrame.getEndsAt()).toBe(60 * 60 * 1000);
+      expect((new KairosTimeFrame({ endsAt: '1 hour after epoch' })).getEndsAt()).toBe(60 * 60 * 1000);
 
       // Skipping additional tests since horo will do so exhaustively
     });
 
     it('should normalize ticksEvery', function () {
-      var timeFrame = new KairosTimeFrame({
-        ticksEvery: '1000'
-      });
+      expect((new KairosTimeFrame({ ticksEvery: '1000' })).getTicksEvery()).toBe(1000);
 
-      expect(timeFrame.getTicksEvery()).toBe(1000);
-
-      timeFrame.ticksEvery('1 hour');
-
-      expect(timeFrame.getTicksEvery()).toBe(60 * 60 * 1000);
-
-      // Skipping additional tests since horo will do so exhaustively
-    });
-
-    it('should normalize ticksRelativeTo', function () {
-      var timeFrame = new KairosTimeFrame({
-        ticksRelativeTo: '1000'
-      });
-
-      expect(timeFrame.getTicksRelativeTo()).toBe(1000);
-
-      timeFrame.ticksRelativeTo('epoch');
-
-      expect(timeFrame.getTicksRelativeTo()).toBe(0);
-
-      timeFrame.ticksRelativeTo('1970-01-02');
-
-      expect(timeFrame.getTicksRelativeTo()).toBe(24 * 60 * 60 * 1000); // might need to be offset by timezone
-
-      timeFrame.ticksRelativeTo('1 hour after epoch');
-
-      expect(timeFrame.getTicksRelativeTo()).toBe(60 * 60 * 1000);
+      expect((new KairosTimeFrame({ ticksEvery: '1 hour' })).getTicksEvery()).toBe(60 * 60 * 1000);
 
       // Skipping additional tests since horo will do so exhaustively
     });
 
     it('should normalize syncsTo', function () {
-      var timeFrame = new KairosTimeFrame({
-        syncsTo: '1000'
-      });
+      expect((new KairosTimeFrame({ syncsTo: '1000' })).getSyncsTo()).toBe(1000);
 
-      expect(timeFrame.getSyncsTo()).toBe(1000);
-
-      timeFrame.syncsTo('1 hour');
-
-      expect(timeFrame.getSyncsTo()).toBe(60 * 60 * 1000);
+      expect((new KairosTimeFrame({ syncsTo: '1 hour' })).getSyncsTo()).toBe(60 * 60 * 1000);
 
       // Skipping additional tests since horo will do so exhaustively
     });
@@ -543,20 +442,17 @@ describe('KairosTimeFrame', function () {
     it('should throw an error if you call a getter that can not be evaluated due to a missing named time', function () {
       var timeFrame = new KairosTimeFrame({
         beginsAt: 'foo',
-        endsAt: 'bar',
-        ticksRelativeTo: 'baz'
+        endsAt: 'bar'
       });
 
       expect(timeFrame.getBeginsAt).toThrow();
       expect(timeFrame.getEndsAt).toThrow();
-      expect(timeFrame.getTicksRelativeTo).toThrow();
     });
 
     it('should throw an error if you call start and any named time references cannot be evaluated', function () {
       var timeFrame = new KairosTimeFrame({
         beginsAt: 'foo',
-        endsAt: 'bar',
-        ticksRelativeTo: 'baz'
+        endsAt: 'bar'
       });
 
       expect(timeFrame.start).toThrow();
@@ -638,24 +534,25 @@ describe('KairosTimeFrame', function () {
       expect(unmuted).toBe(true);
     });
 
-    it('should provide the KairosTimeFrame instance to subscribers', function () {
+    it('should provide a KairosEvent instance to subscribers', function () {
       var
         ended = false,
-        framesReceived = [],
-        eventsReceived = [],
-        timeFrame = new KairosTimeFrame({
-          beginsAt: '50ms after now',
-          endsAt: '150ms after beginsAt',
-          ticksEvery: '100ms' // hopefully, this will tick exactly once
-        }).subscribe('ended', function () { ended = true; })
-          .subscribe('began', function (frame) { eventsReceived.push('began'); framesReceived.push(frame); })
-          .subscribe('ended', function (frame) { eventsReceived.push('ended'); framesReceived.push(frame); })
-          .subscribe('ticked', function (frame) { eventsReceived.push('ticked'); framesReceived.push(frame); })
-          .subscribe('muted', function (frame) { eventsReceived.push('muted'); framesReceived.push(frame); })
-          .subscribe('unmuted', function (frame) { eventsReceived.push('unmuted'); framesReceived.push(frame); })
-          .start()
-          .mute()
-          .unmute();
+        eventObjectsReceived = [],
+        eventsReceived = [];
+
+      new KairosTimeFrame({
+        beginsAt: '50ms after now',
+        endsAt: '150ms after beginsAt',
+        ticksEvery: '100ms' // hopefully, this will tick exactly once
+      }).subscribe('ended',   function () { ended = true; })
+        .subscribe('began',   function (ev) { eventsReceived.push('began');   eventObjectsReceived.push(ev); })
+        .subscribe('ended',   function (ev) { eventsReceived.push('ended');   eventObjectsReceived.push(ev); })
+        .subscribe('ticked',  function (ev) { eventsReceived.push('ticked');  eventObjectsReceived.push(ev); })
+        .subscribe('muted',   function (ev) { eventsReceived.push('muted');   eventObjectsReceived.push(ev); })
+        .subscribe('unmuted', function (ev) { eventsReceived.push('unmuted'); eventObjectsReceived.push(ev); })
+        .start()
+        .mute()
+        .unmute();
 
       waitsFor(function () {
         return ended;
@@ -663,11 +560,126 @@ describe('KairosTimeFrame', function () {
 
       runs(function () {
         expect(eventsReceived).toEqual(['muted', 'unmuted', 'began', 'ticked', 'ended']);
-        expect(framesReceived[0]).toBe(timeFrame);
-        expect(framesReceived[1]).toBe(timeFrame);
-        expect(framesReceived[2]).toBe(timeFrame);
-        expect(framesReceived[3]).toBe(timeFrame);
-        expect(framesReceived[4]).toBe(timeFrame);
+        expect(eventObjectsReceived[0]).toEqual(jasmine.any(KairosEvent));
+        expect(eventObjectsReceived[1]).toEqual(jasmine.any(KairosEvent));
+        expect(eventObjectsReceived[2]).toEqual(jasmine.any(KairosEvent));
+        expect(eventObjectsReceived[3]).toEqual(jasmine.any(KairosEvent));
+        expect(eventObjectsReceived[4]).toEqual(jasmine.any(KairosEvent));
+      });
+    });
+
+    it('should not expose a KairosTimeFrame via KairosEvent', function () {
+      var
+        begun = false,
+        event;
+
+      new KairosTimeFrame({
+        beginsAt: '50ms after now'
+      }).subscribe('began', function (ev) { begun = true; event = ev; })
+        .start();
+
+      waitsFor(function () {
+        return begun;
+      });
+
+      runs(function () {
+        expect(event.timeFrame).toBeUndefined();
+      });
+    });
+
+    it('should expose user data on KairosEvent', function () {
+      var
+        begun = false,
+        event;
+
+      new KairosTimeFrame({
+        beginsAt: '50ms after now',
+        data: { test: true }
+      }).subscribe('began', function (ev) { begun = true; event = ev; })
+        .start();
+
+      waitsFor(function () {
+        return begun;
+      });
+
+      runs(function () {
+        expect(event.userData).toEqual({ test: true });
+      });
+    });
+
+    it('should not add the name of the event to the KairosEvent', function () {
+      var
+        begun = false,
+        event;
+
+      new KairosTimeFrame({
+        beginsAt: '50ms after now'
+      }).subscribe('began', function (ev) { begun = true; event = ev; })
+        .start();
+
+      waitsFor(function () {
+        return begun;
+      });
+
+      runs(function () {
+        expect(event.eventName).toBe('began');
+      });
+    });
+
+    it('should not add the name of the timeFrame to the KairosEvent', function () {
+      var
+        begun = false,
+        event;
+
+      new KairosTimeFrame('foo', {
+        beginsAt: '50ms after now'
+      }).subscribe('began', function (ev) { begun = true; event = ev; })
+        .start();
+
+      waitsFor(function () {
+        return begun;
+      });
+
+      runs(function () {
+        expect(event.timeFrameName).toBe('foo');
+      });
+    });
+
+    it('should not add the time when the event was fired to the KairosEvent', function () {
+      var
+        begun = false,
+        event;
+
+      new KairosTimeFrame({
+        beginsAt: '50ms after now'
+      }).subscribe('began', function (ev) { begun = true; event = ev; })
+        .start();
+
+      waitsFor(function () {
+        return begun;
+      });
+
+      runs(function () {
+        expect(event.eventTime).toEqual(jasmine.any(Number));
+      });
+    });
+
+    it('should not expose KairosTimeFrames getDurationRelativeTo method via KairosEvent', function () {
+      var
+        begun = false,
+        event;
+
+      new KairosTimeFrame({
+        beginsAt: '50ms after now'
+      }).subscribe('began', function (ev) { begun = true; event = ev; })
+        .start();
+
+      waitsFor(function () {
+        return begun;
+      });
+
+      runs(function () {
+        expect(event.getDurationRelativeTo('now')).toBeLessThan(0);
       });
     });
   });
@@ -679,11 +691,10 @@ describe('KairosTimeFrame', function () {
         startTime;
 
       new KairosTimeFrame({
-        beginsAt: '100ms after now',
-        ticksRelativeTo: 'now'
-      }).subscribe('began', function (frame) {
+        beginsAt: '100ms after now'
+      }).subscribe('began', function (ev) {
         begun = true;
-        startTime = frame.getRelativeDuration();
+        startTime = ev.getDurationRelativeTo('now');
       }).start();
 
       waitsFor(function () {
@@ -701,11 +712,10 @@ describe('KairosTimeFrame', function () {
         endTime;
 
       new KairosTimeFrame({
-        endsAt: '100ms after now',
-        ticksRelativeTo: 'now'
-      }).subscribe('ended', function (frame) {
+        endsAt: '100ms after now'
+      }).subscribe('ended', function (ev) {
         ended = true;
-        endTime = frame.getRelativeDuration();
+        endTime = ev.getDurationRelativeTo('now');
       }).start();
 
       waitsFor(function () {
@@ -721,15 +731,16 @@ describe('KairosTimeFrame', function () {
       var
         tickedBeforeEnd = false,
         tickedAfterEnd = false,
-        sufficientTimeHasElapsed = false;
+        sufficientTimeHasElapsed = false,
+        frame;
 
       function tickBeforeEnd () { tickedBeforeEnd = true; }
 
-      new KairosTimeFrame({
+      frame = new KairosTimeFrame({
         endsAt: '100ms after now',
         ticksEvery: 50
       }).subscribe('ticked', tickBeforeEnd)
-        .subscribe('ended', function (frame) {
+        .subscribe('ended', function () {
           frame.unsubscribe(['ticked', tickBeforeEnd]);
           frame.subscribe('ticked', function () {
             tickedAfterEnd = true;
@@ -1063,7 +1074,6 @@ describe('KairosTimeFrame', function () {
           beginsAt: 'PT1S after foo',
           endsAt: '2 seconds after beginsAt',
           ticksEvery: '3 seconds',
-          ticksRelativeTo: 'endsAt',
           namedTimes: {
             'foo': '500000'
           },
@@ -1084,7 +1094,6 @@ describe('KairosTimeFrame', function () {
       });
       expect(json.begins_at).toBe(501000);
       expect(json.ends_at).toBe(503000);
-      expect(json.relative_to).toBe(503000);
       expect(json.ticks_every).toBe(3000);
       expect(json.sync_to).toBe(0);
       expect(json.named_times).toEqual({
@@ -1093,8 +1102,6 @@ describe('KairosTimeFrame', function () {
       expect(json.data).toEqual({
         'foo': 'bar'
       });
-      expect(json.relative_duration + now - 503000).toBeGreaterThan(-TIMING_PRECISION);
-      expect(json.relative_duration + now - 503000).toBeLessThan(TIMING_PRECISION);
     });
 
     it('should render as a string', function () {
@@ -1102,7 +1109,6 @@ describe('KairosTimeFrame', function () {
         beginsAt: 'PT1S after foo',
         endsAt: '2 seconds after beginsAt',
         ticksEvery: '3 seconds',
-        ticksRelativeTo: 'endsAt',
         namedTimes: {
           'foo': '500000'
         },

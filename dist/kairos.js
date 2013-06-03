@@ -1,5 +1,5 @@
-/*! kairos v0.3.1 2013-05-10 */
-/* global _: false, define: false */
+/*! kairos v0.4.0 2013-06-03 */
+/*global _: false, define: false, exports: false */
 (function (exports) {
 
   function create () {
@@ -74,7 +74,32 @@
 
 }('object' === typeof exports && exports || this));
 
-/* global _: false, KairosErrors: false, define: false */
+/*global _: false, define: false, require: false, exports: false */
+(function (exports) {
+
+  function create (_) {
+    function KairosEvent (name, timeFrame) {
+      this.eventTime = (new Date()).getTime();
+      this.eventName = name;
+      this.timeFrameName = timeFrame.getName();
+      this.userData = timeFrame.getData();
+      this.getDurationRelativeTo = _.bind(timeFrame.getDurationRelativeTo, timeFrame);
+    }
+
+    return KairosEvent;
+  }
+
+  if ('function' === typeof define && define.amd) {
+    define('kairos_event', ['underscore'], create);
+  } else {
+    exports.KairosEvent = create(
+      ('function' === typeof require && require('underscore')) || exports._ || _
+    );
+  }
+
+}('object' === typeof exports && exports || this));
+
+/*global _: false, KairosEvent: false, KairosErrors: false, define: false, require: false, exports: false */
 (function (exports, privateKey) {
   var
     root = this;
@@ -99,7 +124,7 @@
     };
   }
 
-  function create (_, errors) {
+  function create (_, KairosEvent, errors) {
     var
       DEFAULT_NAMED_TIMES = ['epoch', 'now', 'never'],
 
@@ -400,7 +425,6 @@
       p.normalizedBeginsAt = this.getBeginsAt();
       p.normalizedEndsAt = this.getEndsAt();
       p.normalizedTicksEvery = this.getTicksEvery();
-      p.normalizedTicksRelativeTo = this.getTicksRelativeTo();
       p.normalizedSyncsTo = this.getSyncsTo();
       p.normalizedNamedTimes = this.getNamedTimes();
     }
@@ -440,7 +464,7 @@
       var
         p = this._private(privateKey);
 
-      this.publish('ticked', this);
+      this.publish('ticked', new KairosEvent('ticked', this));
 
       p.tickTimeout = setTimeout(
         _.bind(tick, this),
@@ -465,7 +489,7 @@
       clearTimeout(p.tickTimeout);
 
       this.logger.info('Ending KairosTimeFrame', this.toJson());
-      this.publish('ended', this);
+      this.publish('ended', new KairosEvent('ended', this));
     }
 
     /**
@@ -483,7 +507,7 @@
       p.isBegun = true;
 
       this.logger.info('Starting KairosTimeFrame', this.toJson());
-      this.publish('began', this);
+      this.publish('began', new KairosEvent('began', this));
 
       if (this.getTicksEvery()) {
         p.tickTimeout = setTimeout(
@@ -534,7 +558,6 @@
       var privateData = _.extend({
         beginsAt: 'epoch',
         endsAt: 'never',
-        ticksRelativeTo: 'beginsAt',
         namedTimes: {},
         name: _.isString(name) ? name : null
       }, (_.isObject(name) ? name : params), {
@@ -668,7 +691,7 @@
 
           clearTimeout(p.tickTimeout);
 
-          this.publish('muted', this);
+          this.publish('muted', new KairosEvent('muted', this));
         }
 
         return this;
@@ -700,7 +723,7 @@
             );
           }
 
-          this.publish('unmuted', this);
+          this.publish('unmuted', new KairosEvent('unmuted', this));
         }
 
         return this;
@@ -822,11 +845,9 @@
           begins_at: this.getBeginsAt(),
           ends_at: this.getEndsAt(),
           ticks_every: this.getTicksEvery(),
-          relative_to: this.getTicksRelativeTo(),
           sync_to: this.getSyncsTo(),
           named_times: this.getNamedTimes(),
-          data: this.getData(),
-          relative_duration: this.getRelativeDuration()
+          data: this.getData()
         };
       },
 
@@ -970,35 +991,6 @@
       },
 
       /**
-       * Sets the 'beginsAt' property. Will throw an error if start has already
-       * been called.
-       *
-       * @public
-       * @method beginsAt
-       * @setter
-       *
-       * @param  {Mixed} value
-       *
-       * @return {KairosTimeFrame}
-       *
-       * @throws {MissingParameter|ImmutableError}
-       *
-       * @usage:
-       *   myTimeFrame.beginsAt('1 hour after noon')
-       */
-      beginsAt: function (value) {
-        if (undefined === value || null === value) {
-          throw new errors.MissingParameter();
-        } else if (!this.isStarted()) {
-          this._private(privateKey).beginsAt = value;
-        } else {
-          throw new errors.ImmutableError();
-        }
-
-        return this;
-      },
-
-      /**
        * Gets the millisecond value (or the original value) of the 'endsAt'
        * property.
        *
@@ -1042,35 +1034,6 @@
       },
 
       /**
-       * Sets the 'endsAt' property. Will throw an error if start has already
-       * been called.
-       *
-       * @public
-       * @method endsAt
-       * @setter
-       *
-       * @param  {Mixed} value
-       *
-       * @return {KairosTimeFrame}
-       *
-       * @throws {MissingParameter|ImmutableError}
-       *
-       * @usage:
-       *   myTimeFrame.endsAt('1 hour after noon')
-       */
-      endsAt: function (value) {
-        if (undefined === value || null === value) {
-          throw new errors.MissingParameter();
-        } else if (!this.isStarted()) {
-          this._private(privateKey).endsAt = value;
-        } else {
-          throw new errors.ImmutableError();
-        }
-
-        return this;
-      },
-
-      /**
        * Gets the millisecond value (or the original value) of the 'ticksEvery'
        * property.
        *
@@ -1104,108 +1067,6 @@
       },
 
       /**
-       * Sets the 'ticksEvery' property. Will throw an error if start has already
-       * been called.
-       *
-       * @public
-       * @method ticksEvery
-       * @setter
-       *
-       * @param  {Mixed} value
-       *
-       * @return {KairosTimeFrame}
-       *
-       * @throws {MissingParameter|ImmutableError}
-       *
-       * @usage:
-       *   myTimeFrame.ticksEvery('1 second')
-       */
-      ticksEvery: function (value) {
-        if (undefined === value || null === value) {
-          throw new errors.MissingParameter();
-        } else if (!this.isStarted()) {
-          this._private(privateKey).ticksEvery = value;
-        } else {
-          throw new errors.ImmutableError();
-        }
-
-        return this;
-      },
-
-      /**
-       * Gets the millisecond value (or the original value) of the 'ticksRelativeTo'
-       * property.
-       *
-       * @public
-       * @method getTicksRelativeTo
-       * @getter
-       *
-       * @param  {Object}  [opts]
-       * @param  {Boolean} [opts.originalValue=false]
-       *
-       * @return {Number|Mixed}
-       *
-       * @usage:
-       *   myTimeFrame.getTicksRelativeTo() // 1234567890
-       *   myTimeFrame.getTicksRelativeTo({ originalValue: true }) // 'PT1H after noon'
-       */
-      getTicksRelativeTo: function (opts) {
-        opts = _.extend({
-          originalValue: false
-        }, opts);
-
-        var
-          p = this._private(privateKey),
-          tmp;
-
-        if (opts.originalValue) {
-          return p.ticksRelativeTo;
-        } else if (this.isStarted()) {
-          return p.normalizedTicksRelativeTo;
-        } else {
-          tmp = _.clone(p.namedTimes);
-
-          _.each(p.namedTimes, function (time, name) {
-            tmp[name] = normalizeMoment(time, tmp);
-          });
-
-          tmp.beginsAt = normalizeMoment(p.beginsAt, tmp);
-          tmp.endsAt = normalizeMoment(p.endsAt, tmp);
-
-          return normalizeMoment(p.ticksRelativeTo, tmp);
-        }
-      },
-
-      /**
-       * Sets the 'ticksRelativeTo' property. Will throw an error if start has already
-       * been called.
-       *
-       * @public
-       * @method ticksRelativeTo
-       * @setter
-       *
-       * @param  {Mixed} value
-       *
-       * @return {KairosTimeFrame}
-       *
-       * @throws {MissingParameter|ImmutableError}
-       *
-       * @usage:
-       *   myTimeFrame.ticksRelativeTo('1 hour after noon')
-       */
-      ticksRelativeTo: function (value) {
-        if (undefined === value || null === value) {
-          throw new errors.MissingParameter();
-        } else if (!this.isStarted()) {
-          this._private(privateKey).ticksRelativeTo = value;
-        } else {
-          throw new errors.ImmutableError();
-        }
-
-        return this;
-      },
-
-      /**
        * Gets the millisecond value (or the original value) of the 'syncsTo'
        * property.
        *
@@ -1236,35 +1097,6 @@
         } else {
           return normalizeDuration(p.syncsTo);
         }
-      },
-
-      /**
-       * Sets the 'syncsTo' property. Will throw an error if start has already
-       * been called.
-       *
-       * @public
-       * @method syncsTo
-       * @setter
-       *
-       * @param  {Mixed} value
-       *
-       * @return {KairosTimeFrame}
-       *
-       * @throws {MissingParameter|ImmutableError}
-       *
-       * @usage:
-       *   myTimeFrame.syncsTo('1 hour after noon')
-       */
-      syncsTo: function (value) {
-        if (undefined === value || null === value) {
-          throw new errors.MissingParameter();
-        } else if (!this.isStarted()) {
-          this._private(privateKey).syncsTo = value;
-        } else {
-          throw new errors.ImmutableError();
-        }
-
-        return this;
       },
 
       /**
@@ -1361,58 +1193,40 @@
       },
 
       /**
-       * Set the 'data' property. Will throw an error if start has already
-       * been called.
+       * Gets the current duration relative to a named time.
        *
        * @public
-       * @method setData
-       * @setter
+       * @method getDurationRelativeTo
        *
-       * @param  {Object} value
-       *
-       * @return {KairosTimeFrame}
-       *
-       * @throws {MissingParameter|ImmutableError}
-       */
-      setData: function (value) {
-        if (undefined === value || null === value) {
-          throw new errors.MissingParameter();
-        } else if (!this.isStarted()) {
-          this._private(privateKey).data = value;
-        } else {
-          throw new errors.ImmutableError();
-        }
-
-        return this;
-      },
-
-      /**
-       * Gets the current duration relative to the 'ticksRelativeTo' time.
-       *
-       * @public
-       * @method getRelativeDuration
+       * @param  {String} time
        *
        * @return {Number}
        */
-      getRelativeDuration: function () {
-        return this.getTicksRelativeTo() - (new Date()).getTime();
+      getDurationRelativeTo: function (time) {
+        if (_.isUndefined(time)) {
+          throw new errors.MissingParameter();
+        } else {
+          var origin = this._private(privateKey).namedTimes[time];
+          return origin - (new Date()).getTime();
+        }
       },
 
-      version: '0.3.1'
+      version: '0.4.0'
     });
 
     KairosTimeFrame.prototype.toJson = KairosTimeFrame.prototype.toJSON;
 
-    KairosTimeFrame.version = '0.3.1';
+    KairosTimeFrame.version = '0.4.0';
 
     return KairosTimeFrame;
   }
 
   if ('function' === typeof define && define.amd) {
-    define('kairos_time_frame', ['underscore', 'kairos_errors'], create);
+    define('kairos_time_frame', ['underscore', 'kairos_event', 'kairos_errors'], create);
   } else {
     exports.KairosTimeFrame = create(
       ('function' === typeof require && require('underscore'))      || exports._            || _,
+      ('function' === typeof require && require('./kairos_event'))  || exports.KairosEvent  || KairosEvent,
       ('function' === typeof require && require('./kairos_errors')) || exports.KairosErrors || KairosErrors
     );
   }
@@ -1422,7 +1236,7 @@
   Math.floor(Math.random() * 10000000 + 10000000).toString(36)
 ));
 
-/* global _: false, KairosTimeFrame: false, KairosErrors: false, define: false */
+/*global _: false, KairosTimeFrame: false, KairosErrors: false, define: false, require: false, exports: false */
 (function (exports, privateKey) {
   var
     root = this;
@@ -1459,38 +1273,38 @@
     function wireupSubscriptions (frame) {
       var self = this;
 
-      frame.subscribe('began', function (f) {
-        self.publish('timeFrameBegan', [f]);
-        if (f.getName()) {
-          self.publish(f.getName() + '/began', [f]);
+      frame.subscribe('began', function (ev) {
+        self.publish('timeFrameBegan', [ev]);
+        if (ev.timeFrameName) {
+          self.publish(ev.timeFrameName + '/began', [ev]);
         }
       });
 
-      frame.subscribe('ended', function (f) {
-        self.publish('timeFrameEnded', [f]);
-        if (f.getName()) {
-          self.publish(f.getName() + '/ended', [f]);
+      frame.subscribe('ended', function (ev) {
+        self.publish('timeFrameEnded', [ev]);
+        if (ev.timeFrameName) {
+          self.publish(ev.timeFrameName + '/ended', [ev]);
         }
       });
 
-      frame.subscribe('ticked', function (f) {
-        self.publish('timeFrameTicked', [f]);
-        if (f.getName()) {
-          self.publish(f.getName() + '/ticked', [f]);
+      frame.subscribe('ticked', function (ev) {
+        self.publish('timeFrameTicked', [ev]);
+        if (ev.timeFrameName) {
+          self.publish(ev.timeFrameName + '/ticked', [ev]);
         }
       });
 
-      frame.subscribe('muted', function (f) {
-        self.publish('timeFrameMuted', [f]);
-        if (f.getName()) {
-          self.publish(f.getName() + '/muted', [f]);
+      frame.subscribe('muted', function (ev) {
+        self.publish('timeFrameMuted', [ev]);
+        if (ev.timeFrameName) {
+          self.publish(ev.timeFrameName + '/muted', [ev]);
         }
       });
 
-      frame.subscribe('unmuted', function (f) {
-        self.publish('timeFrameUnmuted', [f]);
-        if (f.getName()) {
-          self.publish(f.getName() + '/unmuted', [f]);
+      frame.subscribe('unmuted', function (ev) {
+        self.publish('timeFrameUnmuted', [ev]);
+        if (ev.timeFrameName) {
+          self.publish(ev.timeFrameName + '/unmuted', [ev]);
         }
       });
     }
@@ -1836,12 +1650,12 @@
         }
       },
 
-      version: '0.3.1'
+      version: '0.4.0'
     });
 
     KairosCollection.prototype.toJson = KairosCollection.prototype.toJSON;
 
-    KairosCollection.version = '0.3.1';
+    KairosCollection.version = '0.4.0';
 
     return KairosCollection;
   }

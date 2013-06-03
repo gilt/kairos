@@ -1,4 +1,4 @@
-/* global KairosTimeFrame: false, KairosCollection: false, _: false, jasmine: false, describe: false, xdescribe: false, it: false, xit: false, expect: false, waitsFor: false, runs: false */
+/*global KairosTimeFrame: false, KairosCollection: false, KairosEvent: false, _: false, jasmine: false, describe: false, xdescribe: false, it: false, xit: false, expect: false, waitsFor: false, runs: false */
 describe('KairosCollection', function () {
   describe('Constructor', function () {
     it('should construct with no arguments', function () {
@@ -341,29 +341,28 @@ describe('KairosCollection', function () {
       });
     });
 
-    it('should provide a KairosTimeFrame instance to subscribers', function () {
+    it('should provide a KairosEvent instance to subscribers', function () {
       var
-        framesReceived = [],
-        ended = false,
-        timeFrame = new KairosTimeFrame('test', {
+        eventObjectsReceived = [],
+        ended = false;
+
+      new KairosCollection([
+        new KairosTimeFrame('test', {
           beginsAt: '100ms after now',
           endsAt: '200ms after now',
           ticksEvery: '50ms'
-        });
-
-      new KairosCollection([
-        timeFrame
-      ]).subscribe('timeFrameEnded', function (frame) { ended = true; })
-        .subscribe('timeFrameBegan', function (frame) { framesReceived.push(frame); })
-        .subscribe('timeFrameEnded', function (frame) { framesReceived.push(frame); })
-        .subscribe('timeFrameTicked', function (frame) { framesReceived.push(frame); })
-        .subscribe('timeFrameMuted', function (frame) { framesReceived.push(frame); })
-        .subscribe('timeFrameUnmuted', function (frame) { framesReceived.push(frame); })
-        .subscribe('test/began', function (frame) { framesReceived.push(frame); })
-        .subscribe('test/ended', function (frame) { framesReceived.push(frame); })
-        .subscribe('test/ticked', function (frame) { framesReceived.push(frame); })
-        .subscribe('test/muted', function (frame) { framesReceived.push(frame); })
-        .subscribe('test/unmuted', function (frame) { framesReceived.push(frame); })
+        })
+      ]).subscribe('timeFrameEnded',   function () { ended = true; })
+        .subscribe('timeFrameBegan',   function (ev) { eventObjectsReceived.push(ev); })
+        .subscribe('timeFrameEnded',   function (ev) { eventObjectsReceived.push(ev); })
+        .subscribe('timeFrameTicked',  function (ev) { eventObjectsReceived.push(ev); })
+        .subscribe('timeFrameMuted',   function (ev) { eventObjectsReceived.push(ev); })
+        .subscribe('timeFrameUnmuted', function (ev) { eventObjectsReceived.push(ev); })
+        .subscribe('test/began',       function (ev) { eventObjectsReceived.push(ev); })
+        .subscribe('test/ended',       function (ev) { eventObjectsReceived.push(ev); })
+        .subscribe('test/ticked',      function (ev) { eventObjectsReceived.push(ev); })
+        .subscribe('test/muted',       function (ev) { eventObjectsReceived.push(ev); })
+        .subscribe('test/unmuted',     function (ev) { eventObjectsReceived.push(ev); })
         .start()
         .mute()
         .unmute();
@@ -373,17 +372,17 @@ describe('KairosCollection', function () {
       });
 
       runs(function () {
-        expect(framesReceived.length).toBe(10);
-        expect(framesReceived[0]).toBe(timeFrame);
-        expect(framesReceived[1]).toBe(timeFrame);
-        expect(framesReceived[2]).toBe(timeFrame);
-        expect(framesReceived[3]).toBe(timeFrame);
-        expect(framesReceived[4]).toBe(timeFrame);
-        expect(framesReceived[5]).toBe(timeFrame);
-        expect(framesReceived[6]).toBe(timeFrame);
-        expect(framesReceived[7]).toBe(timeFrame);
-        expect(framesReceived[8]).toBe(timeFrame);
-        expect(framesReceived[9]).toBe(timeFrame);
+        expect(eventObjectsReceived.length).toBe(10);
+        expect(eventObjectsReceived[0]).toEqual(jasmine.any(KairosEvent));
+        expect(eventObjectsReceived[1]).toEqual(jasmine.any(KairosEvent));
+        expect(eventObjectsReceived[2]).toEqual(jasmine.any(KairosEvent));
+        expect(eventObjectsReceived[3]).toEqual(jasmine.any(KairosEvent));
+        expect(eventObjectsReceived[4]).toEqual(jasmine.any(KairosEvent));
+        expect(eventObjectsReceived[5]).toEqual(jasmine.any(KairosEvent));
+        expect(eventObjectsReceived[6]).toEqual(jasmine.any(KairosEvent));
+        expect(eventObjectsReceived[7]).toEqual(jasmine.any(KairosEvent));
+        expect(eventObjectsReceived[8]).toEqual(jasmine.any(KairosEvent));
+        expect(eventObjectsReceived[9]).toEqual(jasmine.any(KairosEvent));
       });
     });
 

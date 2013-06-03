@@ -46,6 +46,7 @@ module.exports = (grunt) ->
       build:
         src: [
           'lib/kairos_errors.js'
+          'lib/kairos_event.js',
           'lib/kairos_time_frame.js'
           'lib/kairos_collection.js'
         ]
