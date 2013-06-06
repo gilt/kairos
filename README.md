@@ -47,23 +47,21 @@ immediately and no end event. Finally, if you start the frame after it is
 
 ### Simple Trivial Example
 
-Here's a simple example, using the chaining API and counting down the time
-until lunch:
+Here's a simple example, counting down the time until lunch:
 
 ```javascript
-var lunchFrame = new KairosTimeFrame('lunchFrame') // the name of this frame is 'lunchFrame'
-  .beginsAt('now') // 'now' is a built-in time corresponding to the time of the instance construction
-  .endsAt('lunch') // 'lunch' is a named time that is not yet available
-  .ticksEvery('1 minute') // ticks will be published at 1-minute intervals
-  .ticksRelativeTo('lunch') // the frame's getRelativeDuration() will be relative to named time 'lunch'
-  .extendNamedTimes({
+var lunchFrame = new KairosTimeFrame('lunchFrame', { // the name of this frame is 'lunchFrame'
+    beginsAt: 'now', // 'now' is a built-in time corresponding to the time of the instance construction
+    endsAt: 'lunch', // 'lunch' is a named time that is not yet available
+    ticksEvery: '1 minute', // ticks will be published at 1-minute intervals
+  }).extendNamedTimes({
     lunch: '2012-01-01 12:00:00' // now we provide the named time 'lunch' to the frame
   }).start(); // and finally start the frame
 ```
 
 It will publish ticks every minute from the time the page loads ('now') until
 the named time 'lunch' occurs. The frame instance exposes a method
-getRelativeDuration() which provides access to the milliseconds remaining until
+getDurationRelativeTo() which provides access to the milliseconds remaining until
 lunch.
 
 ### Slightly More Complex Example Using a Collection
@@ -78,42 +76,41 @@ and use the collection to start all of them at once.
 // named time 'lunch', which must either be provided to the frame or to
 // the collection that holds the frame. The 'now' named time is provided
 // by default to all frames, along with 'never' and 'epoch'.
-var beforeLunchFrame = new KairosTimeFrame('beforeLunch')
-  .beginsAt('now')
-  .endsAt('2 minutes before lunch')
-  .ticksEvery('1 minute')
-  .ticksRelativeTo('lunch')
-  .extendNamedTimes({
+var beforeLunchFrame = new KairosTimeFrame('beforeLunch', {
+    beginsAt: 'now',
+    endsAt: '2 minutes before lunch',
+    ticksEvery:'1 minute'
+  }).extendNamedTimes({
     lunch: '2012-01-01 12:00:00'
   });
 
 // This frame begins two minutes before the named time 'lunch', and also
 // will publish tick events, every second, while it is running. The tick
-// events will make the frame available, and its getRelativeDuration()
-// method will provide the time countdown relative to the 'lunch' event.
-var almostLunchFrame = new KairosTimeFrame('almostLunch')
-  .beginsAt('2 minutes before lunch')
-  .endsAt('lunch')
-  .ticksEvery('1 second')
-  .ticksRelativeTo('lunch');
+// events will make an event object available.
+var almostLunchFrame = new KairosTimeFrame('almostLunch', {
+    beginsAt: '2 minutes before lunch'
+    endsAt: 'lunch'
+    ticksEvery: '1 second'
+  });
 
 // This frame begins at the named time 'lunch', and will be active for an
 // infinite time after that.
-var lunchtimeFrame = new KairosTimeFrame('lunchtime')
-  .beginsAt('lunch');
+var lunchtimeFrame = new KairosTimeFrame('lunchTime', {
+    beginsAt: 'lunch'
+  });
 
 // This is a collection to hold all three frames. It allows named times to
 // be provided to all frames at once, and allows subscribers to be attached
 // in one place. The start method will propagate down to all three frames.
 var frameCollection = new KairosCollection([beforeLunchFrame, almostLunchFrame, lunchtimeFrame])
   .extendNamedTimes({ 'lunch' : '2012-01-01 12:00:00' })
-  .subscribe('beforeLunch/ticked', function (frame) {
-    console.log('Time till lunch: ' + (frame.getRelativeDuration() * 1000 * 60) + ' minutes');
+  .subscribe('beforeLunch/ticked', function (event) {
+    console.log('Time till lunch: ' + (event.getDurationRelativeTo('lunch') * 1000 * 60) + ' minutes');
   })
-  .subscribe('almostLunch/ticked', function (frame) {
-    console.log('Time till lunch: ' + (frame.getRelativeDuration() * 1000) + ' seconds');
+  .subscribe('almostLunch/ticked', function (event) {
+    console.log('Time till lunch: ' + (event.getDurationRelativeTo('lunch') * 1000) + ' seconds');
   })
-  .subscribe('lunchtime/began', function () {
+  .subscribe('lunchTime/began', function () {
     alert('You should be at lunch now!');
   })
   .start();
@@ -141,30 +138,32 @@ but not how we actually implement it in our own codebase.
 // Creates several frames, with explicit non-overlapping begin and end
 // times. The ones that tick will be used for countdown clocks.
 var frames = [
-  new KairosTimeFrame('beforeStart')
-    .endsAt('saleStart')
-    .ticksEvery('1 minute')
-    .ticksRelativeTo('saleStart'),
-  new KairosTimeFrame('newSale')
-    .beginsAt('saleStart')
-    .endsAt('12 hours after saleStart'),
-  new KairosTimeFrame('saleRunning')
-    .beginsAt('12 hours after saleStart'),
-    .endsAt('24 hours before saleEnd')
-    .ticksEvery('1 hour')
-    .ticksRelativeTo('saleEnd'),
-  new KairosTimeFrame('lastDay')
-    .beginsAt('24 hours before saleEnd')
-    .endsAt('1 hour before saleEnd')
-    .ticksEvery('1 hour')
-    .ticksRelativeTo('saleEnd'),
-  new KairosTimeFrame('endingSoon')
-    .beginsAt('1 hour before saleEnd')
-    .endsAt('saleEnd')
-    .ticksEvery('1 minute')
-    .ticksRelativeTo('saleEnd'),
-  new KairosTimeFrame('ended')
-    .beginsAt('saleEnd')
+  new KairosTimeFrame('beforeStart', {
+    endsAt: 'saleStart',
+    ticksEvery: '1 minute'
+  }),
+  new KairosTimeFrame('newSale', {
+    beginsAt: 'saleStart',
+    endsAt: '12 hours after saleStart'
+  }),
+  new KairosTimeFrame('saleRunning', {
+    beginsAt: '12 hours after saleStart',
+    endsAt: '24 hours before saleEnd',
+    ticksEvery: '1 hour'
+  }),
+  new KairosTimeFrame('lastDay', {
+    beginsAt: '24 hours before saleEnd',
+    endsAt: '1 hour before saleEnd',
+    ticksEvery: '1 hour'
+  }),
+  new KairosTimeFrame('endingSoon', {
+    beginsAt: '1 hour before saleEnd',
+    endsAt: 'saleEnd',
+    ticksEvery: '1 minute'
+  }),
+  new KairosTimeFrame('ended', {
+    beginsAt: 'saleEnd'
+  })
 ];
 
 // The frame constructor code above refers to named times that are not
@@ -178,7 +177,7 @@ var frameCollection = new KairosCollection(frames)
     saleStart: '2012-01-01 12:00:00',
     saleEnd: '2012-01-02 18:00:00'
   })
-  .subscribe('timeFrameBegan', function (frame) {
+  .subscribe('timeFrameBegan', function (event) {
     // Display the right message to the customer. Note that this would
     // actually use a data object within each frame that contains a format
     // string, and pass it through a formatter to show countdown clocks.
@@ -196,15 +195,15 @@ new KairosTimeFrame('foo')
   .start();
 ```
 
-This frame is now chainable with any of the setters. By default it will begin
+By default it will begin
 at the epoch in 1970 and run forever, with no ticks. So it won't really do you
 much good at all.
 
 ```javascript
-new KairosTimeFrame('foo')
-  .beginsAt('2012-01-01 12:00:00')
-  .endsAt('2012-01-01 18:00:00')
-  .start();
+new KairosTimeFrame('foo', {
+    beginsAt: '2012-01-01 12:00:00',
+    endsAt: '2012-01-01 18:00:00'
+  }).start();
 ```
 
 Now you have a time frame that will begin at noon and end at 6pm on the first
@@ -213,16 +212,8 @@ and when it ends. If start() is called between the begin and end times, a begin
 event will be published immediately. If start() is called after the end time,
 nothing will happen.
 
-Hash notation can also be used, like this:
-
-```javascript
-new KairosTimeFrame('foo', {
-  beginsAt: '2012-01-01 12:00:00',
-  endsAt: '2012-01-01 18:00:00'
-}).start();
-```
-
 Times can be specified in a number of ways:
+
   - Unix timestamp
   - JavaScript Date object
   - String to be passed to the Date() constructor
@@ -327,33 +318,27 @@ between bar and baz'). This example will have an end time of 6pm.
 ### Ticking
 
 Frames can send tick events at a specified interval. This is useful for a clock
-or a countdown application. The tick event contains the reference to the frame,
-which has a getRelativeDuration() method that will retrieve the milliseconds
-relative to the ticksRelativeTo time.
+or a countdown application. The tick event contains a getDurationRelativeTo()
+method that will retrieve the milliseconds relative to a named time.
 
 ```javascript
 var tf = new KairosTimeFrame('foo', {
   beginsAt: '2012-01-01 12:00:00',
   endsAt: '2012-01-01 18:00:00',
-  ticksEvery: '1 minute',
-  ticksRelativeTo: 'endsAt'
+  ticksEvery: '1 minute'
 }).start();
 ```
 
 Then you can then subscribe to the events:
 
 ```javascript
-tf.subscribe('ticked', function (frame) {
-  console.log(frame.getRelativeDuration() * 60 * 60 + ' minutes left!');
+tf.subscribe('ticked', function (event) {
+  console.log(event.getDurationRelativeTo('endsAt') * 60 * 60 + ' minutes left!');
 });
 ```
 
 The ticksEvery field can be in milliseconds, ISO-8601, or natural language
-syntax, and the ticksRelativeTo field can be a named time, the beginsAt or endsAt
-times, or a Date, Unix timestamp, or Date-constructable string.
-
-If ticksRelativeTo is not provided, its default is the beginsAt time, since the
-default endsAt time is Infinity, which is hard to count from.
+syntax.
 
 ### Muting
 
@@ -365,8 +350,7 @@ published, but ticks will not.
 tf = new KairosTimeFrame('foo', {
   beginsAt: '2012-01-01 12:00:00',
   endsAt: '2012-01-01 18:00:00',
-  ticksEvery: '1 second',
-  ticksRelativeTo: 'endsAt'
+  ticksEvery: '1 second'
 }).start();
 ```
 
@@ -480,14 +464,15 @@ Frames can include a data object which will be passed to all of the published
 events.
 
 ```javascript
-var tf = new KairosTimeFrame('foo')
-  .setData({
+var tf = new KairosTimeFrame('foo', {
+  data: {
     bar: 1,
     baz: 2
-  });
+  }
+});
 
-tf.subscribe('ended', function (frame) {
-  console.log(frame.getData());
+tf.subscribe('ended', function (event) {
+  console.log(event.userData);
 });
 ```
 
@@ -556,7 +541,7 @@ should install the grunt cli and install dependencies.
 
 Once you have done so, you can run any of our grunt tasks.
 
-    grunt watch
+    grunt
     grunt test
     grunt build
     grunt release:(major or minor or patch)
