@@ -1,4 +1,4 @@
-# Kairos (TODO: BUILD STATUS ICON)
+# Kairos [![Build Status](https://api.travis-ci.org/gilt/kairos.png?branch=master)](https://travis-ci.org/gilt/kairos)
 
 Kairos is a time frame scheduler.
 
