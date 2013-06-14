@@ -37,6 +37,17 @@ module.exports = (grunt) ->
       amd:
         configFile: 'karma.amd.conf.js'
         singleRun: true
+      once_travis:
+        singleRun: true
+        browsers: [
+          'PhantomJS'
+        ]
+      amd_travis:
+        configFile: 'karma.amd.conf.js'
+        singleRun: true
+        browsers: [
+          'PhantomJS'
+        ]
     clean:
       build: ['dist', 'coverage', 'test-results.xml']
     concat:
@@ -92,3 +103,4 @@ module.exports = (grunt) ->
   grunt.registerTask 'default', ['karma:specs']
   grunt.registerTask 'build', ['test', 'clean:build', 'concat', 'replace', 'uglify']
   grunt.registerTask 'test', ['jshint', 'karma:amd', 'karma:once']
+  grunt.registerTask 'test_travis', ['jshint', 'karma:amd_travis', 'karma:once_travis']
