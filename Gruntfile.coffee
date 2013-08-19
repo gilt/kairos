@@ -100,7 +100,14 @@ module.exports = (grunt) ->
   grunt.loadNpmTasks 'grunt-release'
   grunt.loadNpmTasks 'grunt-replace'
 
+  grunt.registerTask 'doc', 'Generate documentation', ->
+    done = this.async()
+    grunt.log.writeln('Generating Documentation...')
+    require('child_process').spawn('./node_modules/.bin/groc', ['lib/*.js', 'README.md']).on 'exit', ->
+      grunt.log.writeln('...done!')
+      done()
+
   grunt.registerTask 'default', ['karma:specs']
-  grunt.registerTask 'build', ['test', 'clean:build', 'concat', 'replace', 'uglify']
+  grunt.registerTask 'build', ['test', 'clean:build', 'doc', 'concat', 'replace', 'uglify']
   grunt.registerTask 'test', ['jshint', 'karma:amd', 'karma:once']
   grunt.registerTask 'test_travis', ['jshint', 'karma:amd_travis', 'karma:once_travis']

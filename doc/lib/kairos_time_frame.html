@@ -1,0 +1,911 @@
+<!DOCTYPE html><html lang="en"><head><title>lib/kairos_time_frame</title></head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0"><meta name="groc-relative-root" content="../"><meta name="groc-document-path" content="lib/kairos_time_frame"><meta name="groc-project-path" content="lib/kairos_time_frame.js"><link rel="stylesheet" type="text/css" media="all" href="../assets/style.css"><script type="text/javascript" src="../assets/behavior.js"></script><body><div id="meta"><div class="file-path">lib/kairos_time_frame.js</div></div><div id="document"><div class="segment"><div class="code"><div class="wrapper"><span class="cm">/*global _: false, KairosEvent: false, KairosErrors: false, define: false, require: false, exports: false */</span>
+<span class="p">(</span><span class="kd">function</span> <span class="p">(</span><span class="nx">exports</span><span class="p">,</span> <span class="nx">privateKey</span><span class="p">)</span> <span class="p">{</span>
+  <span class="kd">var</span>
+    <span class="nx">root</span> <span class="o">=</span> <span class="k">this</span><span class="p">;</span>
+
+  <span class="kd">function</span> <span class="nx">LogChannel</span> <span class="p">(</span><span class="nx">channel</span><span class="p">)</span> <span class="p">{</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Have to do some fancy shit here since all the console methods are native,
+you can't use apply on them in all browsers and you can't alias them in
+all browsers.</p></div></div><div class="code"><div class="wrapper">    <span class="k">return</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">text</span><span class="p">,</span> <span class="nx">args</span><span class="p">)</span> <span class="p">{</span>
+      <span class="k">if</span> <span class="p">(</span><span class="nx">root</span><span class="p">.</span><span class="nx">console</span> <span class="o">&amp;&amp;</span> <span class="nx">console</span><span class="p">[</span><span class="nx">channel</span><span class="p">])</span> <span class="p">{</span> <span class="c1">// Allow late binding, e.g. Firebug</span>
+        <span class="nx">args</span> <span class="o">=</span> <span class="p">[].</span><span class="nx">splice</span><span class="p">.</span><span class="nx">call</span><span class="p">(</span><span class="nx">arguments</span><span class="p">,</span> <span class="mi">1</span><span class="p">);</span>
+        <span class="k">if</span> <span class="p">(</span><span class="mi">0</span> <span class="o">===</span> <span class="nx">args</span><span class="p">.</span><span class="nx">length</span><span class="p">)</span> <span class="p">{</span> <span class="c1">// Handle the simple use-case first, to avoid the possibility of an error, and the associated overhead</span>
+          <span class="nx">console</span><span class="p">[</span><span class="nx">channel</span><span class="p">](</span><span class="nx">text</span><span class="p">);</span>
+        <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+          <span class="k">try</span> <span class="p">{</span> <span class="c1">// This part is in a try-catch since in several browsers, you&#39;re not allowed to use apply on a native method</span>
+            <span class="nx">console</span><span class="p">[</span><span class="nx">channel</span><span class="p">].</span><span class="nx">apply</span><span class="p">(</span><span class="kc">null</span><span class="p">,</span> <span class="p">[].</span><span class="nx">splice</span><span class="p">.</span><span class="nx">call</span><span class="p">(</span><span class="nx">arguments</span><span class="p">,</span> <span class="mi">0</span><span class="p">));</span>
+          <span class="p">}</span> <span class="k">catch</span> <span class="p">(</span><span class="nx">e</span><span class="p">)</span> <span class="p">{</span> <span class="c1">// In those cases, just dump the args</span>
+            <span class="nx">console</span><span class="p">[</span><span class="nx">channel</span><span class="p">](</span><span class="nx">text</span><span class="p">,</span> <span class="nx">args</span><span class="p">);</span>
+          <span class="p">}</span>
+        <span class="p">}</span>
+      <span class="p">}</span>
+    <span class="p">};</span>
+  <span class="p">}</span>
+
+  <span class="kd">function</span> <span class="nx">create</span> <span class="p">(</span><span class="nx">_</span><span class="p">,</span> <span class="nx">KairosEvent</span><span class="p">,</span> <span class="nx">errors</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span>
+      <span class="nx">DEFAULT_NAMED_TIMES</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;epoch&#39;</span><span class="p">,</span> <span class="s1">&#39;now&#39;</span><span class="p">,</span> <span class="s1">&#39;never&#39;</span><span class="p">],</span>
+
+      <span class="nx">DURATION_MULTIPLIERS</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="mi">1000</span> <span class="o">*</span> <span class="mi">60</span> <span class="o">*</span> <span class="mi">60</span> <span class="o">*</span> <span class="mi">24</span> <span class="o">*</span> <span class="mi">365</span><span class="p">,</span>
+        <span class="mi">1000</span> <span class="o">*</span> <span class="mi">60</span> <span class="o">*</span> <span class="mi">60</span> <span class="o">*</span> <span class="mi">24</span> <span class="o">*</span> <span class="mi">30</span><span class="p">,</span>
+        <span class="mi">1000</span> <span class="o">*</span> <span class="mi">60</span> <span class="o">*</span> <span class="mi">60</span> <span class="o">*</span> <span class="mi">24</span><span class="p">,</span>
+        <span class="mi">1000</span> <span class="o">*</span> <span class="mi">60</span> <span class="o">*</span> <span class="mi">60</span><span class="p">,</span>
+        <span class="mi">1000</span> <span class="o">*</span> <span class="mi">60</span><span class="p">,</span>
+        <span class="mi">1000</span><span class="p">,</span>
+        <span class="mi">1</span>
+      <span class="p">],</span>
+
+      <span class="nx">NATURAL_LANGUAGE_PARSERS</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="p">{</span>
+          <span class="nx">mode</span><span class="o">:</span> <span class="s1">&#39;interpolated&#39;</span><span class="p">,</span>
+          <span class="nx">regex</span><span class="o">:</span> <span class="sr">/(?:(?:interpolated)\s+)?(.*)\s+(?:between|from)\s+(.*)\s+(?:and|to)\s+(.*)/</span>
+        <span class="p">},</span>
+        <span class="p">{</span>
+          <span class="nx">mode</span><span class="o">:</span> <span class="s1">&#39;after&#39;</span><span class="p">,</span>
+          <span class="nx">regex</span><span class="o">:</span> <span class="sr">/(?:(?:starting)\s+)?(.*)\s+(?:after|from|following)\s+(.*)/</span>
+        <span class="p">},</span>
+        <span class="p">{</span>
+          <span class="nx">mode</span><span class="o">:</span> <span class="s1">&#39;before&#39;</span><span class="p">,</span>
+          <span class="nx">regex</span><span class="o">:</span> <span class="sr">/(?:(?:starting)\s+)?(.*)\s+(?:before|until|preceeding)\s+(.*)/</span>
+        <span class="p">},</span>
+        <span class="p">{</span>
+          <span class="nx">mode</span><span class="o">:</span> <span class="s1">&#39;at&#39;</span><span class="p">,</span>
+          <span class="nx">regex</span><span class="o">:</span> <span class="sr">/at\s+(.*)/</span> <span class="c1">// with this one, the at is required, to avoid an infinite loop in the case of garbage</span>
+        <span class="p">}</span>
+      <span class="p">],</span>
+
+      <span class="nx">DURATION_PARSER</span> <span class="o">=</span> <span class="k">new</span> <span class="nb">RegExp</span><span class="p">(</span>
+        <span class="s1">&#39;^&#39;</span> <span class="o">+</span>
+          <span class="s1">&#39;\\s*P?\\s*&#39;</span> <span class="o">+</span>
+          <span class="s1">&#39;(?:&#39;</span> <span class="o">+</span>
+          <span class="s1">&#39;(\\d+(?:[\\.,]\\d+)?)&#39;</span> <span class="o">+</span> <span class="c1">// {Years}</span>
+          <span class="s1">&#39;Y&#39;</span> <span class="o">+</span>
+          <span class="s1">&#39;)?&#39;</span> <span class="o">+</span>
+          <span class="s1">&#39;\\s*&#39;</span> <span class="o">+</span>
+          <span class="s1">&#39;(?:&#39;</span> <span class="o">+</span>
+          <span class="s1">&#39;(\\d+(?:[\\.,]\\d+)?)&#39;</span> <span class="o">+</span> <span class="c1">// {Months}</span>
+          <span class="s1">&#39;M&#39;</span> <span class="o">+</span>
+          <span class="s1">&#39;)?&#39;</span> <span class="o">+</span>
+          <span class="s1">&#39;\\s*&#39;</span> <span class="o">+</span>
+          <span class="s1">&#39;(?:&#39;</span> <span class="o">+</span>
+          <span class="s1">&#39;(\\d+(?:[\\.,]\\d+)?)&#39;</span> <span class="o">+</span> <span class="c1">// {Days}</span>
+          <span class="s1">&#39;D&#39;</span> <span class="o">+</span>
+          <span class="s1">&#39;)?&#39;</span> <span class="o">+</span>
+          <span class="s1">&#39;\\s*T?\\s*&#39;</span> <span class="o">+</span>
+          <span class="s1">&#39;(?:&#39;</span> <span class="o">+</span>
+          <span class="s1">&#39;(\\d+(?:[\\.,]\\d+)?)&#39;</span> <span class="o">+</span> <span class="c1">// {Hours}</span>
+          <span class="s1">&#39;H&#39;</span> <span class="o">+</span>
+          <span class="s1">&#39;)?&#39;</span> <span class="o">+</span>
+          <span class="s1">&#39;\\s*&#39;</span> <span class="o">+</span>
+          <span class="s1">&#39;(?:&#39;</span> <span class="o">+</span>
+          <span class="s1">&#39;(\\d+(?:[\\.,]\\d+)?)&#39;</span> <span class="o">+</span> <span class="c1">// {Minutes}</span>
+          <span class="s1">&#39;M&#39;</span> <span class="o">+</span>
+          <span class="s1">&#39;)?&#39;</span> <span class="o">+</span>
+          <span class="s1">&#39;\\s*&#39;</span> <span class="o">+</span>
+          <span class="s1">&#39;(?:&#39;</span> <span class="o">+</span>
+          <span class="s1">&#39;(\\d+(?:[\\.,]\\d+)?)&#39;</span> <span class="o">+</span> <span class="c1">// {Seconds}</span>
+          <span class="s1">&#39;S&#39;</span> <span class="o">+</span>
+          <span class="s1">&#39;)?&#39;</span> <span class="o">+</span>
+          <span class="s1">&#39;$&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;i&#39;</span>
+      <span class="p">),</span>
+
+      <span class="nx">NATURAL_LANGUAGE_DURATION_PARSER</span> <span class="o">=</span> <span class="sr">/(\d+(?:[\\.,]\\d+)?)\s*(y(?:ear)?s?)?(mon(?:th)?s?)?(d(?:ay)?s?)?(h(?:our)?s?)?(min(?:ute)?s?)?(s(?:econd)?s)?(m(?:illi)?s(?:econds?)?)?/gi</span><span class="p">;</span></div></div></div><div class="segment"><div class="comments doc-section doc-section-private"><div class="wrapper"><p><span class='doc-section-header'>Private method normalizeDuration</span></p>
+
+<p>Normalizes a duration in one of several forms into a simple number of ms.
+Accepted forms:
+  {Number} of milliseconds, e.g. 1000
+  {String}:
+    Number of milliseconds, e.g. "1000"
+    ISO-8601 Duration form (PnYnMnDTnHnMnH), e.g. 'PT1H15M'
+    Natural Language form, e.g. '1 Hour and 15 Minutes'</p>
+
+<p>Parameters:</p>
+
+<ul>
+<li><strong>duration can be a String or a Number.</strong></li>
+</ul>
+
+<p><strong>Returns a Number</strong></p></div></div><div class="code"><div class="wrapper">    <span class="kd">function</span> <span class="nx">normalizeDuration</span> <span class="p">(</span><span class="nx">duration</span><span class="p">)</span> <span class="p">{</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>First, check to see if the duration is already a number, e.g. 1000,
+if so, we don't need to do anything</p></div></div><div class="code"><div class="wrapper">      <span class="k">if</span> <span class="p">(</span><span class="nx">_</span><span class="p">.</span><span class="nx">isNumber</span><span class="p">(</span><span class="nx">duration</span><span class="p">))</span> <span class="p">{</span>
+        <span class="k">return</span> <span class="nx">duration</span><span class="p">;</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Presumably, the duration is a string, but let's make sure</p></div></div><div class="code"><div class="wrapper">      <span class="p">}</span> <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="nx">_</span><span class="p">.</span><span class="nx">isString</span><span class="p">(</span><span class="nx">duration</span><span class="p">))</span> <span class="p">{</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Check to see if our duration is a number in string form, e.g. "1000",
+if so, we just need to parse it</p></div></div><div class="code"><div class="wrapper">        <span class="k">if</span> <span class="p">(</span><span class="nb">parseFloat</span><span class="p">(</span><span class="nx">duration</span><span class="p">).</span><span class="nx">toString</span><span class="p">()</span> <span class="o">===</span> <span class="nx">duration</span><span class="p">)</span> <span class="p">{</span>
+          <span class="k">return</span> <span class="nb">parseFloat</span><span class="p">(</span><span class="nx">duration</span><span class="p">);</span>
+        <span class="p">}</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Try parsing it as an ISO-8601 Duration, if so, this is easy</p></div></div><div class="code"><div class="wrapper">        <span class="kd">var</span> <span class="nx">parts</span> <span class="o">=</span> <span class="nx">duration</span><span class="p">.</span><span class="nx">match</span><span class="p">(</span><span class="nx">DURATION_PARSER</span><span class="p">);</span> <span class="c1">// Parses LDML only</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="nx">parts</span><span class="p">)</span> <span class="p">{</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Drop the 'all' portion of the match, leaving only individual values</p></div></div><div class="code"><div class="wrapper">          <span class="nx">parts</span> <span class="o">=</span> <span class="nx">parts</span><span class="p">.</span><span class="nx">splice</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+        <span class="p">}</span> <span class="k">else</span> <span class="p">{</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>We weren't able to parse it as an ISO-8601 Duration, so...
+...it's time to get our hands dirty</p></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>We want to return something similar to what the ISO-8601 Duration parser returns</p></div></div><div class="code"><div class="wrapper">          <span class="nx">parts</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">];</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>We want to extract our values using the (en-us) natural language parser</p></div></div><div class="code"><div class="wrapper">          <span class="nx">duration</span><span class="p">.</span><span class="nx">replace</span><span class="p">(</span><span class="nx">NATURAL_LANGUAGE_DURATION_PARSER</span><span class="p">,</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">all</span><span class="p">,</span> <span class="nx">qty</span><span class="p">)</span> <span class="p">{</span>
+            <span class="kd">var</span> <span class="nx">index</span> <span class="o">=</span> <span class="mi">6</span><span class="p">;</span> <span class="c1">// Default to the milliseconds field</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>The qty is easy to get, but what about the unit? Find it!</p></div></div><div class="code"><div class="wrapper">            <span class="nx">_</span><span class="p">.</span><span class="nx">find</span><span class="p">(</span><span class="nx">_</span><span class="p">.</span><span class="nx">rest</span><span class="p">(</span><span class="nx">arguments</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">v</span><span class="p">,</span> <span class="nx">i</span><span class="p">)</span> <span class="p">{</span>
+              <span class="nx">index</span> <span class="o">=</span> <span class="nx">i</span><span class="p">;</span>
+              <span class="k">return</span> <span class="o">!!</span><span class="nx">v</span><span class="p">;</span>
+            <span class="p">});</span>
+            <span class="nx">parts</span><span class="p">[</span><span class="nx">index</span><span class="p">]</span> <span class="o">=</span> <span class="nb">parseFloat</span><span class="p">(</span><span class="nx">qty</span><span class="p">);</span>
+          <span class="p">});</span>
+        <span class="p">}</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Ok, we now have an array of [years, months, days, hours, minutes, seconds, milliseconds]
+We want to convert that to just milliseconds</p></div></div><div class="code"><div class="wrapper">        <span class="k">return</span> <span class="nx">_</span><span class="p">.</span><span class="nx">reduce</span><span class="p">(</span>
+          <span class="nx">_</span><span class="p">.</span><span class="nx">map</span><span class="p">(</span>
+            <span class="nx">parts</span><span class="p">,</span>
+            <span class="kd">function</span> <span class="p">(</span><span class="nx">n</span><span class="p">,</span> <span class="nx">i</span><span class="p">)</span> <span class="p">{</span>
+              <span class="k">return</span> <span class="p">(</span><span class="nb">parseInt</span><span class="p">(</span><span class="nx">n</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span> <span class="o">*</span> <span class="nx">DURATION_MULTIPLIERS</span><span class="p">[</span><span class="nx">i</span><span class="p">])</span> <span class="o">||</span> <span class="mi">0</span><span class="p">;</span>
+            <span class="p">}</span>
+          <span class="p">),</span>
+          <span class="kd">function</span> <span class="p">(</span><span class="nx">sum</span><span class="p">,</span> <span class="nx">n</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">return</span> <span class="nx">sum</span> <span class="o">+</span> <span class="nx">n</span><span class="p">;</span>
+          <span class="p">},</span>
+          <span class="mi">0</span><span class="p">);</span>
+
+      <span class="p">}</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>If we can't parse it, default to 0</p></div></div><div class="code"><div class="wrapper">      <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+    <span class="p">}</span></div></div></div><div class="segment"><div class="comments doc-section doc-section-private"><div class="wrapper"><p><span class='doc-section-header'>Private method normalizeMoment</span></p>
+
+<p>Normalizes a moment in one of several forms into an unix timestamp.
+Accepted forms:
+  {Number} of milliseconds, e.g. 1000
+  {Date}
+  {String}:
+    Number of milliseconds, e.g. "1000"
+    ISO-8601 Date form (yyyy-mm-ddThh:mm:ss), e.g. '2013-03-29'
+    ISO-8601 Duration form (PnYnMnDTnHnMnH), e.g. 'PT1H15M'
+    Named Time, e.g. 'now' or 'saleStart'
+    Sentence form, offsetting a moment with a duration,
+      e.g. '1 hour after lunch'
+    Sentence form, interpolating two moments,
+      e.g. '50% between lunch and dinner'</p>
+
+<p>Parameters:</p>
+
+<ul>
+<li><p><strong>moment can be a String, a Number, or a Date.</strong></p></li>
+<li><p><strong>namedTimes must be an Object.</strong></p></li>
+</ul>
+
+<p><strong>Returns a Number</strong></p></div></div><div class="code"><div class="wrapper">    <span class="kd">function</span> <span class="nx">normalizeMoment</span> <span class="p">(</span><span class="nx">moment</span><span class="p">,</span> <span class="nx">namedTimes</span><span class="p">)</span> <span class="p">{</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>First, check to see if the moment is already a number, e.g. 1000,
+if so, we don't need to do anything</p></div></div><div class="code"><div class="wrapper">      <span class="k">if</span> <span class="p">(</span><span class="nx">_</span><span class="p">.</span><span class="nx">isNumber</span><span class="p">(</span><span class="nx">moment</span><span class="p">))</span> <span class="p">{</span>
+        <span class="k">return</span> <span class="nx">moment</span><span class="p">;</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Second, check to see if the moment is a Date object,
+if so, just extract the milliseconds</p></div></div><div class="code"><div class="wrapper">      <span class="p">}</span> <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="nx">_</span><span class="p">.</span><span class="nx">isDate</span><span class="p">(</span><span class="nx">moment</span><span class="p">))</span> <span class="p">{</span>
+        <span class="k">return</span> <span class="nx">moment</span><span class="p">.</span><span class="nx">getTime</span><span class="p">();</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Presumably, the moment is a string, but let's make sure</p></div></div><div class="code"><div class="wrapper">      <span class="p">}</span> <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="nx">_</span><span class="p">.</span><span class="nx">isString</span><span class="p">(</span><span class="nx">moment</span><span class="p">))</span> <span class="p">{</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Check to see if our moment is a number in string form, e.g. "1000",
+if so, we just need to parse it</p></div></div><div class="code"><div class="wrapper">        <span class="k">if</span> <span class="p">(</span><span class="nb">parseFloat</span><span class="p">(</span><span class="nx">moment</span><span class="p">).</span><span class="nx">toString</span><span class="p">()</span> <span class="o">===</span> <span class="nx">moment</span><span class="p">)</span> <span class="p">{</span>
+          <span class="k">return</span> <span class="nb">parseFloat</span><span class="p">(</span><span class="nx">moment</span><span class="p">);</span>
+        <span class="p">}</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Look for our moment as a named time</p></div></div><div class="code"><div class="wrapper">        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">_</span><span class="p">.</span><span class="nx">isUndefined</span><span class="p">(</span><span class="nx">namedTimes</span><span class="p">[</span><span class="nx">moment</span><span class="p">]))</span> <span class="p">{</span>
+          <span class="k">return</span> <span class="nx">namedTimes</span><span class="p">[</span><span class="nx">moment</span><span class="p">];</span>
+        <span class="p">}</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Can we parse our moment as date?</p></div></div><div class="code"><div class="wrapper">        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nb">isNaN</span><span class="p">(</span><span class="nb">Date</span><span class="p">.</span><span class="nx">parse</span><span class="p">(</span><span class="nx">moment</span><span class="p">)))</span> <span class="p">{</span>
+          <span class="k">return</span> <span class="nb">Date</span><span class="p">.</span><span class="nx">parse</span><span class="p">(</span><span class="nx">moment</span><span class="p">);</span>
+        <span class="p">}</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>We weren't able to parse it easily ... it's time to get our hands dirty</p></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Iterate over our natural language parsers until we find one that matches</p></div></div><div class="code"><div class="wrapper">        <span class="nx">_</span><span class="p">.</span><span class="nx">find</span><span class="p">(</span><span class="nx">NATURAL_LANGUAGE_PARSERS</span><span class="p">,</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">parser</span><span class="p">)</span> <span class="p">{</span>
+          <span class="kd">var</span> <span class="nx">results</span> <span class="o">=</span> <span class="nx">moment</span><span class="p">.</span><span class="nx">match</span><span class="p">(</span><span class="nx">parser</span><span class="p">.</span><span class="nx">regex</span><span class="p">);</span>
+
+          <span class="k">if</span> <span class="p">(</span><span class="nx">results</span><span class="p">)</span> <span class="p">{</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Since we matched, let's see what mode we're in</p></div></div><div class="code"><div class="wrapper">            <span class="k">switch</span> <span class="p">(</span><span class="nx">parser</span><span class="p">.</span><span class="nx">mode</span><span class="p">)</span> <span class="p">{</span>
+              <span class="k">case</span> <span class="s1">&#39;interpolated&#39;</span><span class="o">:</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>We're going to interpolate between 2 moments</p></div></div><div class="code"><div class="wrapper">                <span class="nx">moment</span> <span class="o">=</span> <span class="p">{</span>
+                  <span class="nx">interpolated</span><span class="o">:</span> <span class="nb">parseFloat</span><span class="p">(</span><span class="nx">results</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">*</span> <span class="p">(</span><span class="sr">/%/</span><span class="p">.</span><span class="nx">test</span><span class="p">(</span><span class="nx">results</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">?</span> <span class="mf">0.01</span> <span class="o">:</span> <span class="mi">1</span><span class="p">),</span>
+                  <span class="nx">between</span><span class="o">:</span> <span class="nx">results</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span>
+                  <span class="nx">and</span><span class="o">:</span> <span class="nx">results</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span>
+                <span class="p">};</span>
+                <span class="k">break</span><span class="p">;</span>
+              <span class="k">case</span> <span class="s1">&#39;after&#39;</span><span class="o">:</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>We're going to add a duration to a moment</p></div></div><div class="code"><div class="wrapper">                <span class="nx">moment</span> <span class="o">=</span> <span class="p">{</span>
+                  <span class="nx">starting</span><span class="o">:</span> <span class="nx">results</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                  <span class="nx">after</span><span class="o">:</span> <span class="nx">results</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+                <span class="p">};</span>
+                <span class="k">break</span><span class="p">;</span>
+              <span class="k">case</span> <span class="s1">&#39;before&#39;</span><span class="o">:</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>We're going to subtract a duration from a moment</p></div></div><div class="code"><div class="wrapper">                <span class="nx">moment</span> <span class="o">=</span> <span class="p">{</span>
+                  <span class="nx">starting</span><span class="o">:</span> <span class="nx">results</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                  <span class="nx">before</span><span class="o">:</span> <span class="nx">results</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+                <span class="p">};</span>
+                <span class="k">break</span><span class="p">;</span>
+              <span class="k">case</span> <span class="s1">&#39;at&#39;</span><span class="o">:</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>We're actually AT a moment</p></div></div><div class="code"><div class="wrapper">                <span class="nx">moment</span> <span class="o">=</span> <span class="p">{</span>
+                  <span class="nx">at</span><span class="o">:</span> <span class="nx">results</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+                <span class="p">};</span>
+            <span class="p">}</span>
+          <span class="p">}</span>
+
+          <span class="k">return</span> <span class="o">!!</span><span class="nx">results</span><span class="p">;</span>
+        <span class="p">});</span>
+
+      <span class="p">}</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Either the original moment is a hash, or we created a hash from a string form</p></div></div><div class="code"><div class="wrapper">      <span class="k">if</span> <span class="p">(</span><span class="nx">_</span><span class="p">.</span><span class="nx">isObject</span><span class="p">(</span><span class="nx">moment</span><span class="p">))</span> <span class="p">{</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Simple case, it's a named time</p></div></div><div class="code"><div class="wrapper">        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">_</span><span class="p">.</span><span class="nx">isUndefined</span><span class="p">(</span><span class="nx">moment</span><span class="p">.</span><span class="nx">at</span><span class="p">))</span> <span class="p">{</span>
+          <span class="k">return</span> <span class="nx">normalizeMoment</span><span class="p">(</span><span class="nx">moment</span><span class="p">.</span><span class="nx">at</span><span class="p">,</span> <span class="nx">namedTimes</span><span class="p">);</span>
+        <span class="p">}</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Almost as simple, just subtract/add a duration from a moment</p></div></div><div class="code"><div class="wrapper">        <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">_</span><span class="p">.</span><span class="nx">isUndefined</span><span class="p">(</span><span class="nx">moment</span><span class="p">.</span><span class="nx">starting</span><span class="p">))</span> <span class="p">{</span>
+
+          <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">_</span><span class="p">.</span><span class="nx">isUndefined</span><span class="p">(</span><span class="nx">moment</span><span class="p">.</span><span class="nx">after</span><span class="p">))</span> <span class="p">{</span>
+            <span class="k">return</span> <span class="nx">normalizeMoment</span><span class="p">(</span><span class="nx">moment</span><span class="p">.</span><span class="nx">after</span><span class="p">,</span> <span class="nx">namedTimes</span><span class="p">)</span> <span class="o">+</span> <span class="nx">normalizeDuration</span><span class="p">(</span><span class="nx">moment</span><span class="p">.</span><span class="nx">starting</span><span class="p">);</span>
+          <span class="p">}</span> <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">_</span><span class="p">.</span><span class="nx">isUndefined</span><span class="p">(</span><span class="nx">moment</span><span class="p">.</span><span class="nx">before</span><span class="p">))</span> <span class="p">{</span>
+            <span class="k">return</span> <span class="nx">normalizeMoment</span><span class="p">(</span><span class="nx">moment</span><span class="p">.</span><span class="nx">before</span><span class="p">,</span> <span class="nx">namedTimes</span><span class="p">)</span> <span class="o">-</span> <span class="nx">normalizeDuration</span><span class="p">(</span><span class="nx">moment</span><span class="p">.</span><span class="nx">starting</span><span class="p">);</span>
+          <span class="p">}</span>
+
+        <span class="p">}</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>More complex: interpolate between 2 moments</p></div></div><div class="code"><div class="wrapper">        <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="nx">_</span><span class="p">.</span><span class="nx">isNumber</span><span class="p">(</span><span class="nx">moment</span><span class="p">.</span><span class="nx">interpolated</span><span class="p">)</span> <span class="o">&amp;&amp;</span> <span class="o">!</span><span class="nx">_</span><span class="p">.</span><span class="nx">isUndefined</span><span class="p">(</span><span class="nx">moment</span><span class="p">.</span><span class="nx">between</span><span class="p">)</span> <span class="o">&amp;&amp;</span> <span class="o">!</span><span class="nx">_</span><span class="p">.</span><span class="nx">isUndefined</span><span class="p">(</span><span class="nx">moment</span><span class="p">.</span><span class="nx">and</span><span class="p">))</span> <span class="p">{</span>
+
+          <span class="k">return</span> <span class="nx">normalizeMoment</span><span class="p">(</span><span class="nx">moment</span><span class="p">.</span><span class="nx">between</span><span class="p">,</span> <span class="nx">namedTimes</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span>
+            <span class="nx">normalizeMoment</span><span class="p">(</span><span class="nx">moment</span><span class="p">.</span><span class="nx">and</span><span class="p">,</span> <span class="nx">namedTimes</span><span class="p">)</span> <span class="o">-</span>
+              <span class="nx">normalizeMoment</span><span class="p">(</span><span class="nx">moment</span><span class="p">.</span><span class="nx">between</span><span class="p">,</span> <span class="nx">namedTimes</span><span class="p">)</span>
+            <span class="p">)</span> <span class="o">*</span> <span class="nx">moment</span><span class="p">.</span><span class="nx">interpolated</span><span class="p">;</span>
+
+        <span class="p">}</span>
+      <span class="p">}</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>If we can't parse it, default to 0</p></div></div><div class="code"><div class="wrapper">      <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+    <span class="p">}</span></div></div></div><div class="segment"><div class="comments doc-section doc-section-private"><div class="wrapper"><p><span class='doc-section-header'>Private method freeze</span></p>
+
+<p>Freezes the normalized forms of each parameter that can be normalized.</p></div></div><div class="code"><div class="wrapper">    <span class="kd">function</span> <span class="nx">freeze</span> <span class="p">()</span> <span class="p">{</span>
+      <span class="kd">var</span>
+        <span class="nx">p</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">_private</span><span class="p">(</span><span class="nx">privateKey</span><span class="p">);</span>
+
+      <span class="nx">p</span><span class="p">.</span><span class="nx">normalizedBeginsAt</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">getBeginsAt</span><span class="p">();</span>
+      <span class="nx">p</span><span class="p">.</span><span class="nx">normalizedEndsAt</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">getEndsAt</span><span class="p">();</span>
+      <span class="nx">p</span><span class="p">.</span><span class="nx">normalizedTicksEvery</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">getTicksEvery</span><span class="p">();</span>
+      <span class="nx">p</span><span class="p">.</span><span class="nx">normalizedSyncsTo</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">getSyncsTo</span><span class="p">();</span>
+      <span class="nx">p</span><span class="p">.</span><span class="nx">normalizedNamedTimes</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">getNamedTimes</span><span class="p">();</span>
+    <span class="p">}</span></div></div></div><div class="segment"><div class="comments doc-section doc-section-private"><div class="wrapper"><p><span class='doc-section-header'>Private method getNextTick</span></p>
+
+<p>Calculates when the next tick will occur.</p>
+
+<p><strong>Returns a Number</strong></p></div></div><div class="code"><div class="wrapper">    <span class="kd">function</span> <span class="nx">getNextTick</span> <span class="p">()</span> <span class="p">{</span>
+      <span class="kd">var</span>
+        <span class="nx">now</span> <span class="o">=</span> <span class="p">(</span><span class="k">new</span> <span class="nb">Date</span><span class="p">()).</span><span class="nx">getTime</span><span class="p">(),</span>
+        <span class="nx">interval</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">getTicksEvery</span><span class="p">(),</span>
+        <span class="nx">sync</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">getSyncsTo</span><span class="p">();</span>
+
+      <span class="k">return</span> <span class="nx">now</span> <span class="o">+</span>
+        <span class="nx">interval</span> <span class="o">-</span>
+        <span class="p">(</span>
+          <span class="nx">sync</span> <span class="o">?</span>
+            <span class="p">(</span><span class="nx">now</span> <span class="o">+</span> <span class="nx">interval</span><span class="p">)</span> <span class="o">%</span> <span class="nx">sync</span>
+            <span class="o">:</span> <span class="mi">0</span>
+          <span class="p">);</span>
+    <span class="p">}</span></div></div></div><div class="segment"><div class="comments doc-section doc-section-private"><div class="wrapper"><p><span class='doc-section-header'>Private method tick </span></p>
+
+<p>Ticks during a time frame.</p></div></div><div class="code"><div class="wrapper">    <span class="kd">function</span> <span class="nx">tick</span> <span class="p">()</span> <span class="p">{</span>
+      <span class="kd">var</span>
+        <span class="nx">p</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">_private</span><span class="p">(</span><span class="nx">privateKey</span><span class="p">);</span>
+
+      <span class="k">this</span><span class="p">.</span><span class="nx">publish</span><span class="p">(</span><span class="s1">&#39;ticked&#39;</span><span class="p">,</span> <span class="k">new</span> <span class="nx">KairosEvent</span><span class="p">(</span><span class="s1">&#39;ticked&#39;</span><span class="p">,</span> <span class="k">this</span><span class="p">));</span>
+
+      <span class="nx">p</span><span class="p">.</span><span class="nx">tickTimeout</span> <span class="o">=</span> <span class="nx">setTimeout</span><span class="p">(</span>
+        <span class="nx">_</span><span class="p">.</span><span class="nx">bind</span><span class="p">(</span><span class="nx">tick</span><span class="p">,</span> <span class="k">this</span><span class="p">),</span>
+        <span class="nx">getNextTick</span><span class="p">.</span><span class="nx">call</span><span class="p">(</span><span class="k">this</span><span class="p">)</span> <span class="o">-</span> <span class="p">(</span><span class="k">new</span> <span class="nb">Date</span><span class="p">()).</span><span class="nx">getTime</span><span class="p">()</span>
+      <span class="p">);</span>
+    <span class="p">}</span></div></div></div><div class="segment"><div class="comments doc-section doc-section-private"><div class="wrapper"><p><span class='doc-section-header'>Private method end </span></p>
+
+<p>Ends a time frame.</p></div></div><div class="code"><div class="wrapper">    <span class="kd">function</span> <span class="nx">end</span> <span class="p">()</span> <span class="p">{</span>
+      <span class="kd">var</span>
+        <span class="nx">p</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">_private</span><span class="p">(</span><span class="nx">privateKey</span><span class="p">);</span>
+
+      <span class="nx">p</span><span class="p">.</span><span class="nx">isEnded</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
+
+      <span class="nx">clearTimeout</span><span class="p">(</span><span class="nx">p</span><span class="p">.</span><span class="nx">tickTimeout</span><span class="p">);</span>
+
+      <span class="k">this</span><span class="p">.</span><span class="nx">logger</span><span class="p">.</span><span class="nx">info</span><span class="p">(</span><span class="s1">&#39;Ending KairosTimeFrame&#39;</span><span class="p">,</span> <span class="k">this</span><span class="p">.</span><span class="nx">toJson</span><span class="p">());</span>
+      <span class="k">this</span><span class="p">.</span><span class="nx">publish</span><span class="p">(</span><span class="s1">&#39;ended&#39;</span><span class="p">,</span> <span class="k">new</span> <span class="nx">KairosEvent</span><span class="p">(</span><span class="s1">&#39;ended&#39;</span><span class="p">,</span> <span class="k">this</span><span class="p">));</span>
+    <span class="p">}</span></div></div></div><div class="segment"><div class="comments doc-section doc-section-private"><div class="wrapper"><p><span class='doc-section-header'>Private method begin </span></p>
+
+<p>Begins a time frame.</p></div></div><div class="code"><div class="wrapper">    <span class="kd">function</span> <span class="nx">begin</span> <span class="p">()</span> <span class="p">{</span>
+      <span class="kd">var</span>
+        <span class="nx">p</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">_private</span><span class="p">(</span><span class="nx">privateKey</span><span class="p">);</span>
+
+      <span class="nx">p</span><span class="p">.</span><span class="nx">isBegun</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
+
+      <span class="k">this</span><span class="p">.</span><span class="nx">logger</span><span class="p">.</span><span class="nx">info</span><span class="p">(</span><span class="s1">&#39;Starting KairosTimeFrame&#39;</span><span class="p">,</span> <span class="k">this</span><span class="p">.</span><span class="nx">toJson</span><span class="p">());</span>
+      <span class="k">this</span><span class="p">.</span><span class="nx">publish</span><span class="p">(</span><span class="s1">&#39;began&#39;</span><span class="p">,</span> <span class="k">new</span> <span class="nx">KairosEvent</span><span class="p">(</span><span class="s1">&#39;began&#39;</span><span class="p">,</span> <span class="k">this</span><span class="p">));</span>
+
+      <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">getTicksEvery</span><span class="p">())</span> <span class="p">{</span>
+        <span class="nx">p</span><span class="p">.</span><span class="nx">tickTimeout</span> <span class="o">=</span> <span class="nx">setTimeout</span><span class="p">(</span>
+          <span class="nx">_</span><span class="p">.</span><span class="nx">bind</span><span class="p">(</span><span class="nx">tick</span><span class="p">,</span> <span class="k">this</span><span class="p">),</span>
+          <span class="nx">getNextTick</span><span class="p">.</span><span class="nx">call</span><span class="p">(</span><span class="k">this</span><span class="p">)</span> <span class="o">-</span> <span class="p">(</span><span class="k">new</span> <span class="nb">Date</span><span class="p">()).</span><span class="nx">getTime</span><span class="p">()</span>
+        <span class="p">);</span>
+      <span class="p">}</span>
+
+      <span class="k">if</span> <span class="p">(</span><span class="kc">Infinity</span> <span class="o">!==</span> <span class="k">this</span><span class="p">.</span><span class="nx">getEndsAt</span><span class="p">())</span> <span class="p">{</span>
+        <span class="nx">p</span><span class="p">.</span><span class="nx">endTimeout</span> <span class="o">=</span> <span class="nx">setTimeout</span><span class="p">(</span>
+          <span class="nx">_</span><span class="p">.</span><span class="nx">bind</span><span class="p">(</span><span class="nx">end</span><span class="p">,</span> <span class="k">this</span><span class="p">),</span>
+          <span class="k">this</span><span class="p">.</span><span class="nx">getEndsAt</span><span class="p">()</span> <span class="o">-</span> <span class="p">(</span><span class="k">new</span> <span class="nb">Date</span><span class="p">()).</span><span class="nx">getTime</span><span class="p">()</span>
+        <span class="p">);</span>
+      <span class="p">}</span>
+    <span class="p">}</span></div></div></div><div class="segment"><div class="comments doc-section doc-section-public"><div class="wrapper"><p><span class='doc-section-header'>Public constructor KairosTimeFrame</span></p>
+
+<p>Creates a new time frame.</p>
+
+<p>Parameters:</p>
+
+<ul>
+<li><p><strong>name is optional and must be a String.</strong></p></li>
+<li><p><strong>params is optional and must be an Object.</strong></p></li>
+</ul>
+
+<p>Example:</p>
+
+<pre><code>var myTimeFrame = new KairosTimeFrame({
+  beginsAt: '2012-04-01T12:00-0400',
+  endsAt: '36 hours after beginsAt',
+  ticksEvery: '1 hour'
+}).subscribe('began', onBegin)
+  .subscribe('ended', onEnd)
+  .subscribe('ticked', onTick)
+  .start()
+var myOtherTimeFrame = new KairosTimeFrame('foo')
+  .beginsAt('2012-04-01T12:00-0400')
+  .endsAt('36 hours after beginsAt')
+  .start()
+  .subscribe('began', onBegin)
+  .subscribe('ended', onEnd)
+  .subscribe('ticked', onTick)
+  .start()
+</code></pre></div></div><div class="code"><div class="wrapper">    <span class="kd">function</span> <span class="nx">KairosTimeFrame</span> <span class="p">(</span><span class="nx">name</span><span class="p">,</span> <span class="nx">params</span><span class="p">)</span> <span class="p">{</span>
+      <span class="k">this</span><span class="p">.</span><span class="nx">logger</span><span class="p">.</span><span class="nx">info</span><span class="p">(</span><span class="s1">&#39;Creating a new Kairos Time Frame&#39;</span><span class="p">);</span>
+
+      <span class="kd">var</span> <span class="nx">privateData</span> <span class="o">=</span> <span class="nx">_</span><span class="p">.</span><span class="nx">extend</span><span class="p">({</span>
+        <span class="nx">beginsAt</span><span class="o">:</span> <span class="s1">&#39;epoch&#39;</span><span class="p">,</span>
+        <span class="nx">endsAt</span><span class="o">:</span> <span class="s1">&#39;never&#39;</span><span class="p">,</span>
+        <span class="nx">namedTimes</span><span class="o">:</span> <span class="p">{},</span>
+        <span class="nx">name</span><span class="o">:</span> <span class="nx">_</span><span class="p">.</span><span class="nx">isString</span><span class="p">(</span><span class="nx">name</span><span class="p">)</span> <span class="o">?</span> <span class="nx">name</span> <span class="o">:</span> <span class="kc">null</span>
+      <span class="p">},</span> <span class="p">(</span><span class="nx">_</span><span class="p">.</span><span class="nx">isObject</span><span class="p">(</span><span class="nx">name</span><span class="p">)</span> <span class="o">?</span> <span class="nx">name</span> <span class="o">:</span> <span class="nx">params</span><span class="p">),</span> <span class="p">{</span>
+        <span class="nx">isStarted</span><span class="o">:</span> <span class="kc">false</span><span class="p">,</span>
+        <span class="nx">isStopped</span><span class="o">:</span> <span class="kc">false</span><span class="p">,</span>
+        <span class="nx">isMuted</span><span class="o">:</span> <span class="kc">false</span><span class="p">,</span>
+        <span class="nx">isBegun</span><span class="o">:</span> <span class="kc">false</span><span class="p">,</span>
+        <span class="nx">isEnded</span><span class="o">:</span> <span class="kc">false</span><span class="p">,</span>
+        <span class="nx">notifyChannels</span><span class="o">:</span> <span class="p">{}</span>
+      <span class="p">});</span>
+
+      <span class="nx">_</span><span class="p">.</span><span class="nx">defaults</span><span class="p">(</span><span class="nx">privateData</span><span class="p">.</span><span class="nx">namedTimes</span><span class="p">,</span> <span class="p">{</span>
+        <span class="nx">epoch</span><span class="o">:</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="nx">now</span><span class="o">:</span> <span class="p">(</span><span class="k">new</span> <span class="nb">Date</span><span class="p">()).</span><span class="nx">getTime</span><span class="p">(),</span>
+        <span class="nx">never</span><span class="o">:</span> <span class="kc">Infinity</span>
+      <span class="p">});</span></div></div></div><div class="segment"><div class="comments doc-section doc-section-private"><div class="wrapper"><p><span class='doc-section-header'>Private method _private</span></p>
+
+<p>Our private data needs to be accessible from our prototypes, but not be
+accessible otherwise. We accomplish this using a lock &amp; key.</p>
+
+<p>Parameters:</p>
+
+<ul>
+<li><strong>key must be a String.</strong></li>
+</ul>
+
+<p><strong>Returns an Object</strong><br/><strong>and</strong> <strong>Can throw an AccessDenied</strong></p></div></div><div class="code"><div class="wrapper">      <span class="k">this</span><span class="p">.</span><span class="nx">_private</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">key</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nx">key</span> <span class="o">===</span> <span class="nx">privateKey</span><span class="p">)</span> <span class="p">{</span>
+          <span class="k">return</span> <span class="nx">privateData</span><span class="p">;</span>
+        <span class="p">}</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nx">errors</span><span class="p">.</span><span class="nx">AccessDenied</span><span class="p">();</span>
+      <span class="p">};</span>
+    <span class="p">}</span>
+
+    <span class="nx">_</span><span class="p">.</span><span class="nx">extend</span><span class="p">(</span><span class="nx">KairosTimeFrame</span><span class="p">.</span><span class="nx">prototype</span><span class="p">,</span> <span class="p">{</span></div></div></div><div class="segment"><div class="comments doc-section doc-section-public"><div class="wrapper"><p><span class='doc-section-header'>Public method start</span></p>
+
+<p>Starts a frame.
+A quick note on terminology:
+  "begin", in this context, means the the moment when things start to
+    happen, e.g. it corresponds to the 'beginsAt' parameter.
+  "start", in this context, is a control command, meaning, I'm done with
+    setup, go start doing stuff, or wait until "begin" to do so.</p>
+
+<p><strong>Returns a KairosTimeFrame</strong></p>
+
+<p>Example:</p>
+
+<pre><code>myTimeFrame.start()
+</code></pre></div></div><div class="code"><div class="wrapper">      <span class="nx">start</span><span class="o">:</span> <span class="kd">function</span> <span class="p">()</span> <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="k">this</span><span class="p">.</span><span class="nx">isStarted</span><span class="p">()</span> <span class="o">&amp;&amp;</span> <span class="o">!</span><span class="k">this</span><span class="p">.</span><span class="nx">isStopped</span><span class="p">())</span> <span class="p">{</span>
+          <span class="kd">var</span>
+            <span class="nx">p</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">_private</span><span class="p">(</span><span class="nx">privateKey</span><span class="p">),</span>
+            <span class="nx">now</span> <span class="o">=</span> <span class="p">(</span><span class="k">new</span> <span class="nb">Date</span><span class="p">()).</span><span class="nx">getTime</span><span class="p">();</span>
+
+          <span class="nx">freeze</span><span class="p">.</span><span class="nx">call</span><span class="p">(</span><span class="k">this</span><span class="p">);</span>
+
+          <span class="nx">p</span><span class="p">.</span><span class="nx">isStarted</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
+
+          <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">getEndsAt</span><span class="p">()</span> <span class="o">&lt;=</span> <span class="nx">now</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nx">p</span><span class="p">.</span><span class="nx">isEnded</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
+          <span class="p">}</span> <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">getBeginsAt</span><span class="p">()</span> <span class="o">&lt;=</span> <span class="nx">now</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nx">begin</span><span class="p">.</span><span class="nx">call</span><span class="p">(</span><span class="k">this</span><span class="p">);</span>
+          <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+
+            <span class="nx">p</span><span class="p">.</span><span class="nx">startTimeout</span> <span class="o">=</span> <span class="nx">setTimeout</span><span class="p">(</span>
+              <span class="nx">_</span><span class="p">.</span><span class="nx">bind</span><span class="p">(</span><span class="nx">begin</span><span class="p">,</span> <span class="k">this</span><span class="p">),</span>
+              <span class="k">this</span><span class="p">.</span><span class="nx">getBeginsAt</span><span class="p">()</span> <span class="o">-</span> <span class="p">(</span><span class="k">new</span> <span class="nb">Date</span><span class="p">()).</span><span class="nx">getTime</span><span class="p">()</span>
+            <span class="p">);</span>
+          <span class="p">}</span>
+        <span class="p">}</span>
+
+        <span class="k">return</span> <span class="k">this</span><span class="p">;</span>
+      <span class="p">},</span></div></div></div><div class="segment"><div class="comments doc-section doc-section-public"><div class="wrapper"><p><span class='doc-section-header'>Public destructor method stop</span></p>
+
+<p>Permanently stops the time frame. Everything gets shut down, and can not
+be restarted.</p>
+
+<p><strong>Returns a KairosTimeFrame</strong></p>
+
+<p>Example:</p>
+
+<pre><code>myTimeFrame.stop()
+</code></pre></div></div><div class="code"><div class="wrapper">      <span class="nx">stop</span><span class="o">:</span> <span class="kd">function</span> <span class="p">()</span> <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="k">this</span><span class="p">.</span><span class="nx">isStopped</span><span class="p">())</span> <span class="p">{</span>
+          <span class="kd">var</span>
+            <span class="nx">p</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">_private</span><span class="p">(</span><span class="nx">privateKey</span><span class="p">);</span>
+
+          <span class="nx">p</span><span class="p">.</span><span class="nx">isStopped</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
+
+          <span class="nx">clearTimeout</span><span class="p">(</span><span class="nx">p</span><span class="p">.</span><span class="nx">startTimeout</span><span class="p">);</span>
+          <span class="nx">clearTimeout</span><span class="p">(</span><span class="nx">p</span><span class="p">.</span><span class="nx">tickTimeout</span><span class="p">);</span>
+          <span class="nx">clearTimeout</span><span class="p">(</span><span class="nx">p</span><span class="p">.</span><span class="nx">endTimeout</span><span class="p">);</span>
+        <span class="p">}</span>
+
+        <span class="k">return</span> <span class="k">this</span><span class="p">;</span>
+      <span class="p">},</span></div></div></div><div class="segment"><div class="comments doc-section doc-section-public"><div class="wrapper"><p><span class='doc-section-header'>Public method mute </span></p>
+
+<p>Mutes tick notifications. Begin and end notifications still occur, but
+this will prevent a spam of ticks.</p>
+
+<p><strong>Returns a KairosTimeFrame</strong></p>
+
+<p>Example:</p>
+
+<pre><code>myTimeFrame.mute()
+</code></pre></div></div><div class="code"><div class="wrapper">      <span class="nx">mute</span><span class="o">:</span> <span class="kd">function</span> <span class="p">()</span> <span class="p">{</span>
+        <span class="kd">var</span> <span class="nx">p</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">_private</span><span class="p">(</span><span class="nx">privateKey</span><span class="p">);</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">p</span><span class="p">.</span><span class="nx">isMuted</span><span class="p">)</span> <span class="p">{</span>
+          <span class="nx">p</span><span class="p">.</span><span class="nx">isMuted</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
+
+          <span class="nx">clearTimeout</span><span class="p">(</span><span class="nx">p</span><span class="p">.</span><span class="nx">tickTimeout</span><span class="p">);</span>
+
+          <span class="k">this</span><span class="p">.</span><span class="nx">publish</span><span class="p">(</span><span class="s1">&#39;muted&#39;</span><span class="p">,</span> <span class="k">new</span> <span class="nx">KairosEvent</span><span class="p">(</span><span class="s1">&#39;muted&#39;</span><span class="p">,</span> <span class="k">this</span><span class="p">));</span>
+        <span class="p">}</span>
+
+        <span class="k">return</span> <span class="k">this</span><span class="p">;</span>
+      <span class="p">},</span></div></div></div><div class="segment"><div class="comments doc-section doc-section-public"><div class="wrapper"><p><span class='doc-section-header'>Public method unmute </span></p>
+
+<p>Unmutes (resumes) tick notifications.</p>
+
+<p><strong>Returns a KairosTimeFrame</strong></p>
+
+<p>Example:</p>
+
+<pre><code>myTimeFrame.unmute()
+</code></pre></div></div><div class="code"><div class="wrapper">      <span class="nx">unmute</span><span class="o">:</span> <span class="kd">function</span> <span class="p">()</span> <span class="p">{</span>
+        <span class="kd">var</span> <span class="nx">p</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">_private</span><span class="p">(</span><span class="nx">privateKey</span><span class="p">);</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="nx">p</span><span class="p">.</span><span class="nx">isMuted</span><span class="p">)</span> <span class="p">{</span>
+          <span class="nx">p</span><span class="p">.</span><span class="nx">isMuted</span> <span class="o">=</span> <span class="kc">false</span><span class="p">;</span>
+
+          <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">getTicksEvery</span><span class="p">()</span> <span class="o">&amp;&amp;</span> <span class="nx">p</span><span class="p">.</span><span class="nx">isStarted</span> <span class="o">&amp;&amp;</span> <span class="o">!</span><span class="nx">p</span><span class="p">.</span><span class="nx">isStopped</span> <span class="o">&amp;&amp;</span> <span class="nx">p</span><span class="p">.</span><span class="nx">isBegun</span> <span class="o">&amp;&amp;</span> <span class="o">!</span><span class="nx">p</span><span class="p">.</span><span class="nx">isEnded</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nx">p</span><span class="p">.</span><span class="nx">tickTimeout</span> <span class="o">=</span> <span class="nx">setTimeout</span><span class="p">(</span>
+              <span class="nx">_</span><span class="p">.</span><span class="nx">bind</span><span class="p">(</span><span class="nx">tick</span><span class="p">,</span> <span class="k">this</span><span class="p">),</span>
+              <span class="nx">getNextTick</span><span class="p">.</span><span class="nx">call</span><span class="p">(</span><span class="k">this</span><span class="p">)</span> <span class="o">-</span> <span class="p">(</span><span class="k">new</span> <span class="nb">Date</span><span class="p">()).</span><span class="nx">getTime</span><span class="p">()</span>
+            <span class="p">);</span>
+          <span class="p">}</span>
+
+          <span class="k">this</span><span class="p">.</span><span class="nx">publish</span><span class="p">(</span><span class="s1">&#39;unmuted&#39;</span><span class="p">,</span> <span class="k">new</span> <span class="nx">KairosEvent</span><span class="p">(</span><span class="s1">&#39;unmuted&#39;</span><span class="p">,</span> <span class="k">this</span><span class="p">));</span>
+        <span class="p">}</span>
+
+        <span class="k">return</span> <span class="k">this</span><span class="p">;</span>
+      <span class="p">},</span></div></div></div><div class="segment"><div class="comments doc-section doc-section-public"><div class="wrapper"><p><span class='doc-section-header'>Public method subscribe</span></p>
+
+<p>Subscribes a function to a given channel.</p>
+
+<p>Parameters:</p>
+
+<ul>
+<li><p><strong>channel must be a String.</strong></p></li>
+<li><p><strong>fn must be a Function.</strong></p></li>
+</ul>
+
+<p><strong>Returns a KairosTimeFrame</strong></p>
+
+<p>Example:</p>
+
+<pre><code>myTimeFrame.subscribe('foo', function (bar) { ... }
+</code></pre></div></div><div class="code"><div class="wrapper">      <span class="nx">subscribe</span><span class="o">:</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">channel</span><span class="p">,</span> <span class="nx">fn</span><span class="p">)</span> <span class="p">{</span>
+        <span class="kd">var</span> <span class="nx">notifyChannels</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">_private</span><span class="p">(</span><span class="nx">privateKey</span><span class="p">).</span><span class="nx">notifyChannels</span><span class="p">;</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">notifyChannels</span><span class="p">[</span><span class="nx">channel</span><span class="p">])</span> <span class="p">{</span>
+          <span class="nx">notifyChannels</span><span class="p">[</span><span class="nx">channel</span><span class="p">]</span> <span class="o">=</span> <span class="p">[];</span>
+        <span class="p">}</span>
+        <span class="nx">notifyChannels</span><span class="p">[</span><span class="nx">channel</span><span class="p">].</span><span class="nx">push</span><span class="p">(</span><span class="nx">fn</span><span class="p">);</span>
+
+        <span class="k">return</span> <span class="k">this</span><span class="p">;</span>
+      <span class="p">},</span></div></div></div><div class="segment"><div class="comments doc-section doc-section-public"><div class="wrapper"><p><span class='doc-section-header'>Public method publish</span></p>
+
+<p>Publishes an event on a given channel.</p>
+
+<p>Parameters:</p>
+
+<ul>
+<li><p><strong>channel must be a String.</strong></p></li>
+<li><p><strong>args is optional and can be of any type.</strong></p></li>
+<li><p><strong>scope is optional and must be an Object.</strong></p></li>
+</ul>
+
+<p><strong>Returns a KairosTimeFrame</strong></p>
+
+<p>Example:</p>
+
+<pre><code>myTimeFrame.publish('foo', bar);
+</code></pre></div></div><div class="code"><div class="wrapper">      <span class="nx">publish</span><span class="o">:</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">channel</span><span class="p">,</span> <span class="nx">args</span><span class="p">,</span> <span class="nx">scope</span><span class="p">)</span> <span class="p">{</span>
+        <span class="kd">var</span>
+          <span class="nx">self</span> <span class="o">=</span> <span class="k">this</span><span class="p">,</span>
+          <span class="nx">notifyChannels</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">_private</span><span class="p">(</span><span class="nx">privateKey</span><span class="p">).</span><span class="nx">notifyChannels</span><span class="p">;</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="nx">notifyChannels</span><span class="p">[</span><span class="nx">channel</span><span class="p">])</span> <span class="p">{</span>
+          <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">_</span><span class="p">.</span><span class="nx">isArray</span><span class="p">(</span><span class="nx">args</span><span class="p">))</span> <span class="p">{</span>
+            <span class="nx">args</span> <span class="o">=</span> <span class="p">[</span><span class="nx">args</span><span class="p">];</span>
+          <span class="p">}</span>
+
+          <span class="nx">_</span><span class="p">.</span><span class="nx">each</span><span class="p">(</span><span class="nx">notifyChannels</span><span class="p">[</span><span class="nx">channel</span><span class="p">],</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">fn</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">try</span> <span class="p">{</span>
+              <span class="nx">fn</span><span class="p">.</span><span class="nx">apply</span><span class="p">(</span><span class="nx">scope</span><span class="p">,</span> <span class="nx">args</span><span class="p">);</span>
+            <span class="p">}</span> <span class="k">catch</span> <span class="p">(</span><span class="nx">e</span><span class="p">)</span> <span class="p">{</span>
+              <span class="nx">self</span><span class="p">.</span><span class="nx">logger</span><span class="p">.</span><span class="nx">error</span><span class="p">(</span><span class="nx">e</span><span class="p">);</span>
+            <span class="p">}</span>
+          <span class="p">});</span>
+        <span class="p">}</span>
+
+        <span class="k">return</span> <span class="k">this</span><span class="p">;</span>
+      <span class="p">},</span></div></div></div><div class="segment"><div class="comments doc-section doc-section-public"><div class="wrapper"><p><span class='doc-section-header'>Public method unsubscribe</span></p>
+
+<p>Unsubscribes a function from a given channel.</p>
+
+<p>Parameters:</p>
+
+<ul>
+<li><strong>handle can be of any type.</strong></li>
+</ul>
+
+<p><strong>Returns a KairosTimeFrame</strong></p>
+
+<p>Example:</p>
+
+<pre><code>myTimeFrame.unsubscribe(['foo', fooFn])
+</code></pre></div></div><div class="code"><div class="wrapper">      <span class="nx">unsubscribe</span><span class="o">:</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">handle</span><span class="p">)</span> <span class="p">{</span>
+        <span class="kd">var</span>
+          <span class="nx">notifyChannels</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">_private</span><span class="p">(</span><span class="nx">privateKey</span><span class="p">).</span><span class="nx">notifyChannels</span><span class="p">,</span>
+          <span class="nx">channel</span> <span class="o">=</span> <span class="nx">handle</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+          <span class="nx">fn</span> <span class="o">=</span> <span class="nx">handle</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+          <span class="nx">i</span><span class="p">;</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="nx">notifyChannels</span><span class="p">[</span><span class="nx">channel</span><span class="p">])</span> <span class="p">{</span>
+          <span class="k">for</span> <span class="p">(</span><span class="nx">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="nx">i</span> <span class="o">&lt;</span> <span class="nx">notifyChannels</span><span class="p">[</span><span class="nx">channel</span><span class="p">].</span><span class="nx">length</span><span class="p">;</span> <span class="nx">i</span> <span class="o">+=</span> <span class="mi">1</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">if</span> <span class="p">(</span><span class="nx">notifyChannels</span><span class="p">[</span><span class="nx">channel</span><span class="p">][</span><span class="nx">i</span><span class="p">]</span> <span class="o">===</span> <span class="nx">fn</span><span class="p">)</span> <span class="p">{</span>
+              <span class="nx">notifyChannels</span><span class="p">[</span><span class="nx">channel</span><span class="p">].</span><span class="nx">splice</span><span class="p">(</span><span class="nx">i</span><span class="p">,</span> <span class="mi">1</span><span class="p">);</span>
+            <span class="p">}</span>
+          <span class="p">}</span>
+        <span class="p">}</span>
+
+        <span class="k">return</span> <span class="k">this</span><span class="p">;</span>
+      <span class="p">},</span></div></div></div><div class="segment"><div class="comments doc-section doc-section-public"><div class="wrapper"><p><span class='doc-section-header'>Public method toJSON </span></p>
+
+<p>Returns a representation of this frame suitable for json serialization.</p>
+
+<p><strong>Returns an Object</strong></p></div></div><div class="code"><div class="wrapper">      <span class="nx">toJSON</span><span class="o">:</span> <span class="kd">function</span> <span class="p">()</span> <span class="p">{</span>
+        <span class="k">return</span> <span class="p">{</span>
+          <span class="nx">name</span><span class="o">:</span> <span class="k">this</span><span class="p">.</span><span class="nx">getName</span><span class="p">(),</span>
+          <span class="nx">state</span><span class="o">:</span> <span class="p">{</span>
+            <span class="nx">is_started</span><span class="o">:</span> <span class="k">this</span><span class="p">.</span><span class="nx">isStarted</span><span class="p">(),</span>
+            <span class="nx">is_stopped</span><span class="o">:</span> <span class="k">this</span><span class="p">.</span><span class="nx">isEnded</span><span class="p">(),</span>
+            <span class="nx">is_begun</span><span class="o">:</span> <span class="k">this</span><span class="p">.</span><span class="nx">isBegun</span><span class="p">(),</span>
+            <span class="nx">is_ended</span><span class="o">:</span> <span class="k">this</span><span class="p">.</span><span class="nx">isEnded</span><span class="p">(),</span>
+            <span class="nx">is_muted</span><span class="o">:</span> <span class="k">this</span><span class="p">.</span><span class="nx">isMuted</span><span class="p">()</span>
+          <span class="p">},</span>
+          <span class="nx">begins_at</span><span class="o">:</span> <span class="k">this</span><span class="p">.</span><span class="nx">getBeginsAt</span><span class="p">(),</span>
+          <span class="nx">ends_at</span><span class="o">:</span> <span class="k">this</span><span class="p">.</span><span class="nx">getEndsAt</span><span class="p">(),</span>
+          <span class="nx">ticks_every</span><span class="o">:</span> <span class="k">this</span><span class="p">.</span><span class="nx">getTicksEvery</span><span class="p">(),</span>
+          <span class="nx">sync_to</span><span class="o">:</span> <span class="k">this</span><span class="p">.</span><span class="nx">getSyncsTo</span><span class="p">(),</span>
+          <span class="nx">named_times</span><span class="o">:</span> <span class="k">this</span><span class="p">.</span><span class="nx">getNamedTimes</span><span class="p">(),</span>
+          <span class="nx">data</span><span class="o">:</span> <span class="k">this</span><span class="p">.</span><span class="nx">getData</span><span class="p">()</span>
+        <span class="p">};</span>
+      <span class="p">},</span></div></div></div><div class="segment"><div class="comments doc-section doc-section-public"><div class="wrapper"><p><span class='doc-section-header'>Public method toString</span></p>
+
+<p>Returns a string representation of this time frame.</p>
+
+<p><strong>Returns a String</strong></p></div></div><div class="code"><div class="wrapper">      <span class="nx">toString</span><span class="o">:</span> <span class="kd">function</span> <span class="p">()</span> <span class="p">{</span>
+        <span class="k">return</span> <span class="nx">JSON</span><span class="p">.</span><span class="nx">stringify</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">toJson</span><span class="p">(),</span> <span class="kc">null</span><span class="p">,</span> <span class="mi">2</span><span class="p">);</span>
+      <span class="p">},</span>
+
+      <span class="nx">logger</span><span class="o">:</span> <span class="p">{</span>
+        <span class="nx">log</span><span class="o">:</span>   <span class="k">new</span> <span class="nx">LogChannel</span><span class="p">(</span><span class="s1">&#39;log&#39;</span><span class="p">),</span>
+        <span class="nx">info</span><span class="o">:</span>  <span class="k">new</span> <span class="nx">LogChannel</span><span class="p">(</span><span class="s1">&#39;info&#39;</span><span class="p">),</span>
+        <span class="nx">debug</span><span class="o">:</span> <span class="k">new</span> <span class="nx">LogChannel</span><span class="p">(</span><span class="s1">&#39;debug&#39;</span><span class="p">),</span>
+        <span class="nx">warn</span><span class="o">:</span>  <span class="k">new</span> <span class="nx">LogChannel</span><span class="p">(</span><span class="s1">&#39;warn&#39;</span><span class="p">),</span>
+        <span class="nx">error</span><span class="o">:</span> <span class="k">new</span> <span class="nx">LogChannel</span><span class="p">(</span><span class="s1">&#39;error&#39;</span><span class="p">)</span>
+      <span class="p">},</span></div></div></div><div class="segment"><div class="comments doc-section doc-section-public"><div class="wrapper"><p><span class='doc-section-header'>Public method isStarted</span></p>
+
+<p>Has start been called on this time frame?</p>
+
+<p><strong>Returns a Boolean</strong></p></div></div><div class="code"><div class="wrapper">      <span class="nx">isStarted</span><span class="o">:</span> <span class="kd">function</span> <span class="p">()</span> <span class="p">{</span>
+        <span class="k">return</span> <span class="k">this</span><span class="p">.</span><span class="nx">_private</span><span class="p">(</span><span class="nx">privateKey</span><span class="p">).</span><span class="nx">isStarted</span><span class="p">;</span>
+      <span class="p">},</span></div></div></div><div class="segment"><div class="comments doc-section doc-section-public"><div class="wrapper"><p><span class='doc-section-header'>Public method isStopped</span></p>
+
+<p>Has stop been called on this time frame?</p>
+
+<p><strong>Returns a Boolean</strong></p></div></div><div class="code"><div class="wrapper">      <span class="nx">isStopped</span><span class="o">:</span> <span class="kd">function</span> <span class="p">()</span> <span class="p">{</span>
+        <span class="k">return</span> <span class="k">this</span><span class="p">.</span><span class="nx">_private</span><span class="p">(</span><span class="nx">privateKey</span><span class="p">).</span><span class="nx">isStopped</span><span class="p">;</span>
+      <span class="p">},</span></div></div></div><div class="segment"><div class="comments doc-section doc-section-public"><div class="wrapper"><p><span class='doc-section-header'>Public method isMuted</span></p>
+
+<p>Is this time frame currently muted?</p>
+
+<p><strong>Returns a Boolean</strong></p></div></div><div class="code"><div class="wrapper">      <span class="nx">isMuted</span><span class="o">:</span> <span class="kd">function</span> <span class="p">()</span> <span class="p">{</span>
+        <span class="k">return</span> <span class="k">this</span><span class="p">.</span><span class="nx">_private</span><span class="p">(</span><span class="nx">privateKey</span><span class="p">).</span><span class="nx">isMuted</span><span class="p">;</span>
+      <span class="p">},</span></div></div></div><div class="segment"><div class="comments doc-section doc-section-public"><div class="wrapper"><p><span class='doc-section-header'>Public method isBegun</span></p>
+
+<p>Has this frame begun yet?</p>
+
+<p><strong>Returns a Boolean</strong></p></div></div><div class="code"><div class="wrapper">      <span class="nx">isBegun</span><span class="o">:</span> <span class="kd">function</span> <span class="p">()</span> <span class="p">{</span>
+        <span class="k">return</span> <span class="k">this</span><span class="p">.</span><span class="nx">_private</span><span class="p">(</span><span class="nx">privateKey</span><span class="p">).</span><span class="nx">isBegun</span><span class="p">;</span>
+      <span class="p">},</span></div></div></div><div class="segment"><div class="comments doc-section doc-section-public"><div class="wrapper"><p><span class='doc-section-header'>Public method isBegun</span></p>
+
+<p>Has this frame ended yet?</p>
+
+<p><strong>Returns a Boolean</strong></p></div></div><div class="code"><div class="wrapper">      <span class="nx">isEnded</span><span class="o">:</span> <span class="kd">function</span> <span class="p">()</span> <span class="p">{</span>
+        <span class="k">return</span> <span class="k">this</span><span class="p">.</span><span class="nx">_private</span><span class="p">(</span><span class="nx">privateKey</span><span class="p">).</span><span class="nx">isEnded</span><span class="p">;</span>
+      <span class="p">},</span></div></div></div><div class="segment"><div class="comments doc-section doc-section-public"><div class="wrapper"><p><span class='doc-section-header'>Public method getName</span></p>
+
+<p>Returns the name of this time frame.</p>
+
+<p><strong>Returns a String</strong></p></div></div><div class="code"><div class="wrapper">      <span class="nx">getName</span><span class="o">:</span> <span class="kd">function</span> <span class="p">()</span> <span class="p">{</span>
+        <span class="k">return</span> <span class="k">this</span><span class="p">.</span><span class="nx">_private</span><span class="p">(</span><span class="nx">privateKey</span><span class="p">).</span><span class="nx">name</span><span class="p">;</span>
+      <span class="p">},</span></div></div></div><div class="segment"><div class="comments doc-section doc-section-public"><div class="wrapper"><p><span class='doc-section-header'>Public method getBeginsAt</span></p>
+
+<p>Gets the millisecond value (or the original value) of the 'beginsAt'
+property.</p>
+
+<p>Parameters:</p>
+
+<ul>
+<li><p><strong>opts is optional and must be an Object.</strong></p>
+
+<ul><li><strong>opts.originalValue is optional, must be a Boolean, and has a default value of false.</strong></li></ul></li>
+</ul>
+
+<p><strong>Returns a Number or a Mixed</strong></p>
+
+<p>Example:</p>
+
+<pre><code>myTimeFrame.getBeginsAt() // 1234567890
+myTimeFrame.getBeginsAt({ originalValue: true }) // 'PT1H after noon'
+</code></pre></div></div><div class="code"><div class="wrapper">      <span class="nx">getBeginsAt</span><span class="o">:</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">opts</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">opts</span> <span class="o">=</span> <span class="nx">_</span><span class="p">.</span><span class="nx">extend</span><span class="p">({</span>
+          <span class="nx">originalValue</span><span class="o">:</span> <span class="kc">false</span>
+        <span class="p">},</span> <span class="nx">opts</span><span class="p">);</span>
+
+        <span class="kd">var</span>
+          <span class="nx">p</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">_private</span><span class="p">(</span><span class="nx">privateKey</span><span class="p">),</span>
+          <span class="nx">tmp</span><span class="p">;</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="nx">opts</span><span class="p">.</span><span class="nx">originalValue</span><span class="p">)</span> <span class="p">{</span>
+          <span class="k">return</span> <span class="nx">p</span><span class="p">.</span><span class="nx">beginsAt</span><span class="p">;</span>
+        <span class="p">}</span> <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">isStarted</span><span class="p">())</span> <span class="p">{</span>
+          <span class="k">return</span> <span class="nx">p</span><span class="p">.</span><span class="nx">normalizedBeginsAt</span><span class="p">;</span>
+        <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+          <span class="nx">tmp</span> <span class="o">=</span> <span class="nx">_</span><span class="p">.</span><span class="nx">clone</span><span class="p">(</span><span class="nx">p</span><span class="p">.</span><span class="nx">namedTimes</span><span class="p">);</span>
+
+          <span class="nx">_</span><span class="p">.</span><span class="nx">each</span><span class="p">(</span><span class="nx">p</span><span class="p">.</span><span class="nx">namedTimes</span><span class="p">,</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">time</span><span class="p">,</span> <span class="nx">name</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nx">tmp</span><span class="p">[</span><span class="nx">name</span><span class="p">]</span> <span class="o">=</span> <span class="nx">normalizeMoment</span><span class="p">(</span><span class="nx">time</span><span class="p">,</span> <span class="nx">tmp</span><span class="p">);</span>
+          <span class="p">});</span>
+
+          <span class="k">return</span> <span class="nx">normalizeMoment</span><span class="p">(</span><span class="nx">p</span><span class="p">.</span><span class="nx">beginsAt</span><span class="p">,</span> <span class="nx">tmp</span><span class="p">);</span>
+        <span class="p">}</span>
+      <span class="p">},</span></div></div></div><div class="segment"><div class="comments doc-section doc-section-public"><div class="wrapper"><p><span class='doc-section-header'>Public method getEndsAt</span></p>
+
+<p>Gets the millisecond value (or the original value) of the 'endsAt'
+property.</p>
+
+<p>Parameters:</p>
+
+<ul>
+<li><p><strong>opts is optional and must be an Object.</strong></p>
+
+<ul><li><strong>opts.originalValue is optional, must be a Boolean, and has a default value of false.</strong></li></ul></li>
+</ul>
+
+<p><strong>Returns a Number or a Mixed</strong></p>
+
+<p>Example:</p>
+
+<pre><code>myTimeFrame.getEndsAt() // 1234567890
+myTimeFrame.getEndsAt({ originalValue: true }) // 'PT1H after noon'
+</code></pre></div></div><div class="code"><div class="wrapper">      <span class="nx">getEndsAt</span><span class="o">:</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">opts</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">opts</span> <span class="o">=</span> <span class="nx">_</span><span class="p">.</span><span class="nx">extend</span><span class="p">({</span>
+          <span class="nx">originalValue</span><span class="o">:</span> <span class="kc">false</span>
+        <span class="p">},</span> <span class="nx">opts</span><span class="p">);</span>
+
+        <span class="kd">var</span>
+          <span class="nx">p</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">_private</span><span class="p">(</span><span class="nx">privateKey</span><span class="p">),</span>
+          <span class="nx">tmp</span><span class="p">;</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="nx">opts</span><span class="p">.</span><span class="nx">originalValue</span><span class="p">)</span> <span class="p">{</span>
+          <span class="k">return</span> <span class="nx">p</span><span class="p">.</span><span class="nx">endsAt</span><span class="p">;</span>
+        <span class="p">}</span> <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">isStarted</span><span class="p">())</span> <span class="p">{</span>
+          <span class="k">return</span> <span class="nx">p</span><span class="p">.</span><span class="nx">normalizedEndsAt</span><span class="p">;</span>
+        <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+          <span class="nx">tmp</span> <span class="o">=</span> <span class="nx">_</span><span class="p">.</span><span class="nx">clone</span><span class="p">(</span><span class="nx">p</span><span class="p">.</span><span class="nx">namedTimes</span><span class="p">);</span>
+
+          <span class="nx">_</span><span class="p">.</span><span class="nx">each</span><span class="p">(</span><span class="nx">p</span><span class="p">.</span><span class="nx">namedTimes</span><span class="p">,</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">time</span><span class="p">,</span> <span class="nx">name</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nx">tmp</span><span class="p">[</span><span class="nx">name</span><span class="p">]</span> <span class="o">=</span> <span class="nx">normalizeMoment</span><span class="p">(</span><span class="nx">time</span><span class="p">,</span> <span class="nx">tmp</span><span class="p">);</span>
+          <span class="p">});</span>
+
+          <span class="nx">tmp</span><span class="p">.</span><span class="nx">beginsAt</span> <span class="o">=</span> <span class="nx">normalizeMoment</span><span class="p">(</span><span class="nx">p</span><span class="p">.</span><span class="nx">beginsAt</span><span class="p">,</span> <span class="nx">tmp</span><span class="p">);</span>
+
+          <span class="k">return</span> <span class="nx">normalizeMoment</span><span class="p">(</span><span class="nx">p</span><span class="p">.</span><span class="nx">endsAt</span><span class="p">,</span> <span class="nx">tmp</span><span class="p">);</span>
+        <span class="p">}</span>
+      <span class="p">},</span></div></div></div><div class="segment"><div class="comments doc-section doc-section-public"><div class="wrapper"><p><span class='doc-section-header'>Public method getTicksEvery</span></p>
+
+<p>Gets the millisecond value (or the original value) of the 'ticksEvery'
+property.</p>
+
+<p>Parameters:</p>
+
+<ul>
+<li><p><strong>opts is optional and must be an Object.</strong></p>
+
+<ul><li><strong>opts.originalValue is optional, must be a Boolean, and has a default value of false.</strong></li></ul></li>
+</ul>
+
+<p><strong>Returns a Number or a Mixed</strong></p>
+
+<p>Example:</p>
+
+<pre><code>myTimeFrame.getTicksEvery() // 5000
+myTimeFrame.getTicksEvery({ originalValue: true }) // '5 seconds'
+</code></pre></div></div><div class="code"><div class="wrapper">      <span class="nx">getTicksEvery</span><span class="o">:</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">opts</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">opts</span> <span class="o">=</span> <span class="nx">_</span><span class="p">.</span><span class="nx">extend</span><span class="p">({</span>
+          <span class="nx">originalValue</span><span class="o">:</span> <span class="kc">false</span>
+        <span class="p">},</span> <span class="nx">opts</span><span class="p">);</span>
+
+        <span class="kd">var</span> <span class="nx">p</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">_private</span><span class="p">(</span><span class="nx">privateKey</span><span class="p">);</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="nx">opts</span><span class="p">.</span><span class="nx">originalValue</span><span class="p">)</span> <span class="p">{</span>
+          <span class="k">return</span> <span class="nx">p</span><span class="p">.</span><span class="nx">ticksEvery</span><span class="p">;</span>
+        <span class="p">}</span> <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">isStarted</span><span class="p">())</span> <span class="p">{</span>
+          <span class="k">return</span> <span class="nx">p</span><span class="p">.</span><span class="nx">normalizedTicksEvery</span><span class="p">;</span>
+        <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+          <span class="k">return</span> <span class="nx">normalizeDuration</span><span class="p">(</span><span class="nx">p</span><span class="p">.</span><span class="nx">ticksEvery</span><span class="p">);</span>
+        <span class="p">}</span>
+      <span class="p">},</span></div></div></div><div class="segment"><div class="comments doc-section doc-section-public"><div class="wrapper"><p><span class='doc-section-header'>Public method getSyncsTo</span></p>
+
+<p>Gets the millisecond value (or the original value) of the 'syncsTo'
+property.</p>
+
+<p>Parameters:</p>
+
+<ul>
+<li><p><strong>opts is optional and must be an Object.</strong></p>
+
+<ul><li><strong>opts.originalValue is optional, must be a Boolean, and has a default value of false.</strong></li></ul></li>
+</ul>
+
+<p><strong>Returns a Number or a Mixed</strong></p>
+
+<p>Example:</p>
+
+<pre><code>myTimeFrame.getSyncsTo() // 2500
+myTimeFrame.getSyncsTo({ originalValue: true }) 'PT2.5S'
+</code></pre></div></div><div class="code"><div class="wrapper">      <span class="nx">getSyncsTo</span><span class="o">:</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">opts</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">opts</span> <span class="o">=</span> <span class="nx">_</span><span class="p">.</span><span class="nx">extend</span><span class="p">({</span>
+          <span class="nx">originalValue</span><span class="o">:</span> <span class="kc">false</span>
+        <span class="p">},</span> <span class="nx">opts</span><span class="p">);</span>
+
+        <span class="kd">var</span> <span class="nx">p</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">_private</span><span class="p">(</span><span class="nx">privateKey</span><span class="p">);</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="nx">opts</span><span class="p">.</span><span class="nx">originalValue</span><span class="p">)</span> <span class="p">{</span>
+          <span class="k">return</span> <span class="nx">p</span><span class="p">.</span><span class="nx">syncsTo</span><span class="p">;</span>
+        <span class="p">}</span> <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">isStarted</span><span class="p">())</span> <span class="p">{</span>
+          <span class="k">return</span> <span class="nx">p</span><span class="p">.</span><span class="nx">normalizedSyncsTo</span><span class="p">;</span>
+        <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+          <span class="k">return</span> <span class="nx">normalizeDuration</span><span class="p">(</span><span class="nx">p</span><span class="p">.</span><span class="nx">syncsTo</span><span class="p">);</span>
+        <span class="p">}</span>
+      <span class="p">},</span></div></div></div><div class="segment"><div class="comments doc-section doc-section-public"><div class="wrapper"><p><span class='doc-section-header'>Public method getNamedTimes</span></p>
+
+<p>Gets the millisecond values (or the original values) of all of the named
+times. Can also include the default named times (epoch, now, never)</p>
+
+<p>Parameters:</p>
+
+<ul>
+<li><p><strong>opts is optional and must be an Object.</strong></p>
+
+<ul><li><p><strong>opts.originalValue is optional, must be a Boolean, and has a default value of false.</strong></p></li>
+<li><p><strong>opts.includeDefaults is optional, must be a Boolean, and has a default value of false.</strong></p></li></ul></li>
+</ul>
+
+<p><strong>Returns an Object</strong></p>
+
+<p>Example:</p>
+
+<pre><code>myTimeFrame.getNamedTimes() // { noon: 1234567890 }
+myTimeFrame.getNamedTimes({ originalValues: true }) // { noon: '2013-04-01T12:00' }
+myTimeFrame.getNamedTimes({ includeDefaults: true }) // { noon: 1234567890, epoch: 0, now: 2345678901, never: Infinity }
+myTimeFrame.getNamedTimes({ originalValues: true, includeDefaults: true }) // { noon: '2013-04-01T12:00', epoch: 0, now: 2345678901, never: Infinity }
+</code></pre></div></div><div class="code"><div class="wrapper">      <span class="nx">getNamedTimes</span><span class="o">:</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">opts</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">opts</span> <span class="o">=</span> <span class="nx">_</span><span class="p">.</span><span class="nx">extend</span><span class="p">({</span>
+          <span class="nx">originalValue</span><span class="o">:</span> <span class="kc">false</span><span class="p">,</span>
+          <span class="nx">includeDefaults</span><span class="o">:</span> <span class="kc">false</span>
+        <span class="p">},</span> <span class="nx">opts</span><span class="p">);</span>
+
+        <span class="kd">var</span>
+          <span class="nx">p</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">_private</span><span class="p">(</span><span class="nx">privateKey</span><span class="p">),</span>
+          <span class="nx">tmp</span><span class="p">,</span>
+          <span class="nx">result</span> <span class="o">=</span> <span class="p">{};</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="nx">opts</span><span class="p">.</span><span class="nx">originalValue</span><span class="p">)</span> <span class="p">{</span>
+          <span class="nx">_</span><span class="p">.</span><span class="nx">each</span><span class="p">(</span><span class="nx">p</span><span class="p">.</span><span class="nx">namedTimes</span><span class="p">,</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">time</span><span class="p">,</span> <span class="nx">name</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">if</span> <span class="p">(</span><span class="nx">opts</span><span class="p">.</span><span class="nx">includeDefaults</span> <span class="o">||</span> <span class="o">!</span><span class="nx">_</span><span class="p">.</span><span class="nx">contains</span><span class="p">(</span><span class="nx">DEFAULT_NAMED_TIMES</span><span class="p">,</span> <span class="nx">name</span><span class="p">))</span> <span class="p">{</span>
+              <span class="nx">result</span><span class="p">[</span><span class="nx">name</span><span class="p">]</span> <span class="o">=</span> <span class="nx">time</span><span class="p">;</span>
+            <span class="p">}</span>
+          <span class="p">});</span>
+        <span class="p">}</span> <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">isStarted</span><span class="p">())</span> <span class="p">{</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>There is no need to exclude defaults here, since they are already excluded</p></div></div><div class="code"><div class="wrapper">          <span class="nx">result</span> <span class="o">=</span> <span class="nx">_</span><span class="p">.</span><span class="nx">clone</span><span class="p">(</span><span class="nx">p</span><span class="p">.</span><span class="nx">normalizedNamedTimes</span><span class="p">);</span>
+        <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+          <span class="nx">tmp</span> <span class="o">=</span> <span class="nx">_</span><span class="p">.</span><span class="nx">extend</span><span class="p">({</span>
+            <span class="nx">beginsAt</span><span class="o">:</span> <span class="nx">normalizeMoment</span><span class="p">(</span><span class="nx">p</span><span class="p">.</span><span class="nx">beginsAt</span><span class="p">,</span> <span class="nx">p</span><span class="p">.</span><span class="nx">namedTimes</span><span class="p">)</span>
+          <span class="p">},</span> <span class="nx">p</span><span class="p">.</span><span class="nx">namedTimes</span><span class="p">);</span>
+
+          <span class="nx">tmp</span><span class="p">.</span><span class="nx">endsAt</span> <span class="o">=</span> <span class="nx">normalizeMoment</span><span class="p">(</span><span class="nx">p</span><span class="p">.</span><span class="nx">endsAt</span><span class="p">,</span> <span class="nx">tmp</span><span class="p">);</span>
+
+          <span class="nx">_</span><span class="p">.</span><span class="nx">each</span><span class="p">(</span><span class="nx">p</span><span class="p">.</span><span class="nx">namedTimes</span><span class="p">,</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">time</span><span class="p">,</span> <span class="nx">name</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">if</span> <span class="p">(</span><span class="nx">opts</span><span class="p">.</span><span class="nx">includeDefaults</span> <span class="o">||</span> <span class="o">!</span><span class="nx">_</span><span class="p">.</span><span class="nx">contains</span><span class="p">(</span><span class="nx">DEFAULT_NAMED_TIMES</span><span class="p">,</span> <span class="nx">name</span><span class="p">))</span> <span class="p">{</span>
+              <span class="nx">result</span><span class="p">[</span><span class="nx">name</span><span class="p">]</span> <span class="o">=</span> <span class="nx">normalizeMoment</span><span class="p">(</span><span class="nx">time</span><span class="p">,</span> <span class="nx">tmp</span><span class="p">);</span>
+            <span class="p">}</span>
+          <span class="p">});</span>
+        <span class="p">}</span>
+        <span class="k">return</span> <span class="nx">result</span><span class="p">;</span>
+      <span class="p">},</span></div></div></div><div class="segment"><div class="comments doc-section doc-section-public"><div class="wrapper"><p><span class='doc-section-header'>Public method extendNamedTimes</span></p>
+
+<p>Extends the set of named times.</p>
+
+<p>Parameters:</p>
+
+<ul>
+<li><strong>obj must be an Object.</strong></li>
+</ul>
+
+<p><strong>Returns a KairosTimeFrame</strong><br/><strong>and</strong> <strong>Can throw a MissingParameter or an ImmutableError</strong></p></div></div><div class="code"><div class="wrapper">      <span class="nx">extendNamedTimes</span><span class="o">:</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">obj</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">obj</span><span class="p">)</span> <span class="p">{</span>
+          <span class="k">throw</span> <span class="k">new</span> <span class="nx">errors</span><span class="p">.</span><span class="nx">MissingParameter</span><span class="p">();</span>
+        <span class="p">}</span> <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="k">this</span><span class="p">.</span><span class="nx">isStarted</span><span class="p">())</span> <span class="p">{</span>
+          <span class="nx">_</span><span class="p">.</span><span class="nx">extend</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">_private</span><span class="p">(</span><span class="nx">privateKey</span><span class="p">).</span><span class="nx">namedTimes</span><span class="p">,</span> <span class="nx">obj</span><span class="p">);</span>
+        <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+          <span class="k">throw</span> <span class="k">new</span> <span class="nx">errors</span><span class="p">.</span><span class="nx">ImmutableError</span><span class="p">();</span>
+        <span class="p">}</span>
+
+        <span class="k">return</span> <span class="k">this</span><span class="p">;</span>
+      <span class="p">},</span></div></div></div><div class="segment"><div class="comments doc-section doc-section-public"><div class="wrapper"><p><span class='doc-section-header'>Public method getData</span></p>
+
+<p>Returns the 'data' parameter, which is intended for use by consumers.</p>
+
+<p><strong>Returns an Object</strong></p></div></div><div class="code"><div class="wrapper">      <span class="nx">getData</span><span class="o">:</span> <span class="kd">function</span> <span class="p">()</span> <span class="p">{</span>
+        <span class="k">return</span> <span class="k">this</span><span class="p">.</span><span class="nx">_private</span><span class="p">(</span><span class="nx">privateKey</span><span class="p">).</span><span class="nx">data</span><span class="p">;</span>
+      <span class="p">},</span></div></div></div><div class="segment"><div class="comments doc-section doc-section-public"><div class="wrapper"><p><span class='doc-section-header'>Public method getDurationRelativeTo</span></p>
+
+<p>Gets the current duration relative to a named time.</p>
+
+<p>Parameters:</p>
+
+<ul>
+<li><strong>time must be a String.</strong></li>
+</ul>
+
+<p><strong>Returns a Number</strong></p></div></div><div class="code"><div class="wrapper">      <span class="nx">getDurationRelativeTo</span><span class="o">:</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">time</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nx">_</span><span class="p">.</span><span class="nx">isUndefined</span><span class="p">(</span><span class="nx">time</span><span class="p">))</span> <span class="p">{</span>
+          <span class="k">throw</span> <span class="k">new</span> <span class="nx">errors</span><span class="p">.</span><span class="nx">MissingParameter</span><span class="p">();</span>
+        <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+          <span class="kd">var</span> <span class="nx">origin</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">_private</span><span class="p">(</span><span class="nx">privateKey</span><span class="p">).</span><span class="nx">namedTimes</span><span class="p">[</span><span class="nx">time</span><span class="p">];</span>
+          <span class="k">return</span> <span class="nx">origin</span> <span class="o">-</span> <span class="p">(</span><span class="k">new</span> <span class="nb">Date</span><span class="p">()).</span><span class="nx">getTime</span><span class="p">();</span>
+        <span class="p">}</span>
+      <span class="p">},</span>
+
+      <span class="nx">version</span><span class="o">:</span> <span class="s1">&#39;@@version&#39;</span>
+    <span class="p">});</span>
+
+    <span class="nx">KairosTimeFrame</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">toJson</span> <span class="o">=</span> <span class="nx">KairosTimeFrame</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">toJSON</span><span class="p">;</span>
+
+    <span class="nx">KairosTimeFrame</span><span class="p">.</span><span class="nx">version</span> <span class="o">=</span> <span class="s1">&#39;@@version&#39;</span><span class="p">;</span>
+
+    <span class="k">return</span> <span class="nx">KairosTimeFrame</span><span class="p">;</span>
+  <span class="p">}</span>
+
+  <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;function&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">define</span> <span class="o">&amp;&amp;</span> <span class="nx">define</span><span class="p">.</span><span class="nx">amd</span><span class="p">)</span> <span class="p">{</span>
+    <span class="nx">define</span><span class="p">(</span><span class="s1">&#39;kairos_time_frame&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;underscore&#39;</span><span class="p">,</span> <span class="s1">&#39;kairos_event&#39;</span><span class="p">,</span> <span class="s1">&#39;kairos_errors&#39;</span><span class="p">],</span> <span class="nx">create</span><span class="p">);</span>
+  <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+    <span class="nx">exports</span><span class="p">.</span><span class="nx">KairosTimeFrame</span> <span class="o">=</span> <span class="nx">create</span><span class="p">(</span>
+      <span class="p">(</span><span class="s1">&#39;function&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">require</span> <span class="o">&amp;&amp;</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;underscore&#39;</span><span class="p">))</span>      <span class="o">||</span> <span class="nx">exports</span><span class="p">.</span><span class="nx">_</span>            <span class="o">||</span> <span class="nx">_</span><span class="p">,</span>
+      <span class="p">(</span><span class="s1">&#39;function&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">require</span> <span class="o">&amp;&amp;</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;./kairos_event&#39;</span><span class="p">))</span>  <span class="o">||</span> <span class="nx">exports</span><span class="p">.</span><span class="nx">KairosEvent</span>  <span class="o">||</span> <span class="nx">KairosEvent</span><span class="p">,</span>
+      <span class="p">(</span><span class="s1">&#39;function&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">require</span> <span class="o">&amp;&amp;</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;./kairos_errors&#39;</span><span class="p">))</span> <span class="o">||</span> <span class="nx">exports</span><span class="p">.</span><span class="nx">KairosErrors</span> <span class="o">||</span> <span class="nx">KairosErrors</span>
+    <span class="p">);</span>
+  <span class="p">}</span>
+
+<span class="p">}(</span>
+  <span class="s1">&#39;object&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">exports</span> <span class="o">&amp;&amp;</span> <span class="nx">exports</span> <span class="o">||</span> <span class="k">this</span><span class="p">,</span>
+  <span class="nb">Math</span><span class="p">.</span><span class="nx">floor</span><span class="p">(</span><span class="nb">Math</span><span class="p">.</span><span class="nx">random</span><span class="p">()</span> <span class="o">*</span> <span class="mi">10000000</span> <span class="o">+</span> <span class="mi">10000000</span><span class="p">).</span><span class="nx">toString</span><span class="p">(</span><span class="mi">36</span><span class="p">)</span>
+<span class="p">));</span></div></div></div></div></body></html>

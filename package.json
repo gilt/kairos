@@ -37,7 +37,8 @@
     "grunt-contrib-uglify": "0.1.x",
     "grunt-karma": "0.3.x",
     "grunt-release": "0.2.x",
-    "grunt-replace": "0.4.x"
+    "grunt-replace": "0.4.x",
+    "groc": "https://github.com/gilt/groc/archive/v0.5.5.tar.gz"
   },
   "engine": {
     "node": ">=0.8.0"
