@@ -1,4 +1,4 @@
-/*! kairos v0.4.0 2013-06-03 */
+/*! kairos v0.4.0 2013-08-19 */
 /*global _: false, define: false, exports: false */
 (function (exports) {
 
@@ -586,7 +586,7 @@
        *
        * @return  {Object}
        *
-       * @throws  AccessDenied
+       * @throws  {AccessDenied}
        */
       this._private = function (key) {
         if (key === privateKey) {
@@ -1364,7 +1364,7 @@
        *
        * @return  {Object}
        *
-       * @throws  AccessDenied
+       * @throws  {AccessDenied}
        */
       this._private = function (key) {
         if (key === privateKey) {

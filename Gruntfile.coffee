@@ -49,7 +49,7 @@ module.exports = (grunt) ->
           'PhantomJS'
         ]
     clean:
-      build: ['dist', 'coverage', 'test-results.xml']
+      build: ['dist', 'coverage', 'test-results.xml', 'doc']
     concat:
       options:
         separator: '\n\n'
