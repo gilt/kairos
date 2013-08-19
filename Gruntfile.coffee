@@ -103,9 +103,14 @@ module.exports = (grunt) ->
   grunt.registerTask 'doc', 'Generate documentation', ->
     done = this.async()
     grunt.log.writeln('Generating Documentation...')
-    require('child_process').spawn('./node_modules/.bin/groc', ['lib/*.js', 'README.md']).on 'exit', ->
-      grunt.log.writeln('...done!')
-      done()
+    groc = require('child_process').spawn('./node_modules/.bin/groc', ['lib/*.js', 'README.md'])
+    groc.stderr.on 'data', (data) -> grunt.log.error data.toString()
+    groc.on 'exit', (status) ->
+      if 0 == status
+        grunt.log.writeln('...done!')
+        done()
+      else
+        done(false)
 
   grunt.registerTask 'default', ['karma:specs']
   grunt.registerTask 'build', ['test', 'clean:build', 'doc', 'concat', 'replace', 'uglify']
