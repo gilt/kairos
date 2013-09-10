@@ -1,4 +1,4 @@
-/*! kairos v0.4.0 2013-08-19 */
+/*! kairos v0.4.1 2013-09-10 */
 /*global _: false, define: false, exports: false */
 (function (exports) {
 
@@ -193,7 +193,55 @@
         'i'
       ),
 
-      NATURAL_LANGUAGE_DURATION_PARSER = /(\d+(?:[\\.,]\\d+)?)\s*(y(?:ear)?s?)?(mon(?:th)?s?)?(d(?:ay)?s?)?(h(?:our)?s?)?(min(?:ute)?s?)?(s(?:econd)?s)?(m(?:illi)?s(?:econds?)?)?/gi;
+      NATURAL_LANGUAGE_DURATION_PARSER = /(\d+(?:[\\.,]\\d+)?)\s*(y(?:ear)?s?)?(mon(?:th)?s?)?(d(?:ay)?s?)?(h(?:our)?s?)?(min(?:ute)?s?)?(s(?:econd)?s)?(m(?:illi)?s(?:econds?)?)?/gi,
+
+      MAX_TIMEOUT = Math.pow(2, 32) - 1;
+
+    /**
+     * A wrapper for setTimeout, to workaround an issue with setting a timeout for more than ~20 days
+     *
+     * @private
+     * @method  createTimeout
+     *
+     * @todo    Test, and if necessary improve, the accuracy of the aggregate, actual, timeout duration.
+     *
+     * @param   {Function} fn        The function to call when duration has expired
+     * @param   {Number}   duration  How long to wait (in milliseconds) before calling fn
+     *
+     * @return  {Object}
+     */
+    function createTimeout (fn, duration) {
+      var
+        handle = { timeout: null },
+        remainder = duration,
+        handler = function () {
+          if (remainder <= 0) {
+            fn();
+          } else {
+            handle.timeout = setTimeout(handler, Math.min(remainder, MAX_TIMEOUT));
+            remainder -= MAX_TIMEOUT;
+          }
+        };
+
+      handler();
+
+      return handle;
+    }
+
+    /**
+     * A wrapper for clearTimeout, complementing createTimeout above
+     *
+     * @private
+     * @method  removeTimeout
+     *
+     * @param   {Object} handle
+     * @param   {Number} handle.timeout
+     */
+    function removeTimeout (handle) {
+      if (handle) {
+        clearTimeout(handle.timeout);
+      }
+    }
 
     /**
      * Normalizes a duration in one of several forms into a simple number of ms.
@@ -466,7 +514,7 @@
 
       this.publish('ticked', new KairosEvent('ticked', this));
 
-      p.tickTimeout = setTimeout(
+      p.tickTimeout = createTimeout(
         _.bind(tick, this),
         getNextTick.call(this) - (new Date()).getTime()
       );
@@ -486,7 +534,7 @@
 
       p.isEnded = true;
 
-      clearTimeout(p.tickTimeout);
+      removeTimeout(p.tickTimeout);
 
       this.logger.info('Ending KairosTimeFrame', this.toJson());
       this.publish('ended', new KairosEvent('ended', this));
@@ -510,14 +558,14 @@
       this.publish('began', new KairosEvent('began', this));
 
       if (this.getTicksEvery()) {
-        p.tickTimeout = setTimeout(
+        p.tickTimeout = createTimeout(
           _.bind(tick, this),
           getNextTick.call(this) - (new Date()).getTime()
         );
       }
 
       if (Infinity !== this.getEndsAt()) {
-        p.endTimeout = setTimeout(
+        p.endTimeout = createTimeout(
           _.bind(end, this),
           this.getEndsAt() - (new Date()).getTime()
         );
@@ -631,7 +679,7 @@
             begin.call(this);
           } else {
 
-            p.startTimeout = setTimeout(
+            p.startTimeout = createTimeout(
               _.bind(begin, this),
               this.getBeginsAt() - (new Date()).getTime()
             );
@@ -661,9 +709,9 @@
 
           p.isStopped = true;
 
-          clearTimeout(p.startTimeout);
-          clearTimeout(p.tickTimeout);
-          clearTimeout(p.endTimeout);
+          removeTimeout(p.startTimeout);
+          removeTimeout(p.tickTimeout);
+          removeTimeout(p.endTimeout);
         }
 
         return this;
@@ -689,7 +737,7 @@
         if (!p.isMuted) {
           p.isMuted = true;
 
-          clearTimeout(p.tickTimeout);
+          removeTimeout(p.tickTimeout);
 
           this.publish('muted', new KairosEvent('muted', this));
         }
@@ -717,7 +765,7 @@
           p.isMuted = false;
 
           if (this.getTicksEvery() && p.isStarted && !p.isStopped && p.isBegun && !p.isEnded) {
-            p.tickTimeout = setTimeout(
+            p.tickTimeout = createTimeout(
               _.bind(tick, this),
               getNextTick.call(this) - (new Date()).getTime()
             );
@@ -1211,12 +1259,12 @@
         }
       },
 
-      version: '0.4.0'
+      version: '0.4.1'
     });
 
     KairosTimeFrame.prototype.toJson = KairosTimeFrame.prototype.toJSON;
 
-    KairosTimeFrame.version = '0.4.0';
+    KairosTimeFrame.version = '0.4.1';
 
     return KairosTimeFrame;
   }
@@ -1650,12 +1698,12 @@
         }
       },
 
-      version: '0.4.0'
+      version: '0.4.1'
     });
 
     KairosCollection.prototype.toJson = KairosCollection.prototype.toJSON;
 
-    KairosCollection.version = '0.4.0';
+    KairosCollection.version = '0.4.1';
 
     return KairosCollection;
   }

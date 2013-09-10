@@ -90,7 +90,52 @@ all browsers.</p></div></div><div class="code"><div class="wrapper">    <span cl
         <span class="s1">&#39;i&#39;</span>
       <span class="p">),</span>
 
-      <span class="nx">NATURAL_LANGUAGE_DURATION_PARSER</span> <span class="o">=</span> <span class="sr">/(\d+(?:[\\.,]\\d+)?)\s*(y(?:ear)?s?)?(mon(?:th)?s?)?(d(?:ay)?s?)?(h(?:our)?s?)?(min(?:ute)?s?)?(s(?:econd)?s)?(m(?:illi)?s(?:econds?)?)?/gi</span><span class="p">;</span></div></div></div><div class="segment"><div class="comments doc-section doc-section-private"><div class="wrapper"><p><span class='doc-section-header'>Private method normalizeDuration</span></p>
+      <span class="nx">NATURAL_LANGUAGE_DURATION_PARSER</span> <span class="o">=</span> <span class="sr">/(\d+(?:[\\.,]\\d+)?)\s*(y(?:ear)?s?)?(mon(?:th)?s?)?(d(?:ay)?s?)?(h(?:our)?s?)?(min(?:ute)?s?)?(s(?:econd)?s)?(m(?:illi)?s(?:econds?)?)?/gi</span><span class="p">,</span>
+
+      <span class="nx">MAX_TIMEOUT</span> <span class="o">=</span> <span class="nb">Math</span><span class="p">.</span><span class="nx">pow</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">32</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">;</span></div></div></div><div class="segment"><div class="comments doc-section doc-section-private"><div class="wrapper"><p><span class='doc-section-header'>Private method createTimeout</span></p>
+
+<p>A wrapper for setTimeout, to workaround an issue with setting a timeout for more than ~20 days</p>
+
+<p>TODO: Test, and if necessary improve, the accuracy of the aggregate, actual, timeout duration.</p>
+
+<p>Parameters:</p>
+
+<ul>
+<li><p><strong>fn must be a Function.</strong><br/>(The function to call when duration has expired)</p></li>
+<li><p><strong>duration must be a Number.</strong><br/>(How long to wait (in milliseconds) before calling fn)</p></li>
+</ul>
+
+<p><strong>Returns an Object</strong></p></div></div><div class="code"><div class="wrapper">    <span class="kd">function</span> <span class="nx">createTimeout</span> <span class="p">(</span><span class="nx">fn</span><span class="p">,</span> <span class="nx">duration</span><span class="p">)</span> <span class="p">{</span>
+      <span class="kd">var</span>
+        <span class="nx">handle</span> <span class="o">=</span> <span class="p">{</span> <span class="nx">timeout</span><span class="o">:</span> <span class="kc">null</span> <span class="p">},</span>
+        <span class="nx">remainder</span> <span class="o">=</span> <span class="nx">duration</span><span class="p">,</span>
+        <span class="nx">handler</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">()</span> <span class="p">{</span>
+          <span class="k">if</span> <span class="p">(</span><span class="nx">remainder</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nx">fn</span><span class="p">();</span>
+          <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+            <span class="nx">handle</span><span class="p">.</span><span class="nx">timeout</span> <span class="o">=</span> <span class="nx">setTimeout</span><span class="p">(</span><span class="nx">handler</span><span class="p">,</span> <span class="nb">Math</span><span class="p">.</span><span class="nx">min</span><span class="p">(</span><span class="nx">remainder</span><span class="p">,</span> <span class="nx">MAX_TIMEOUT</span><span class="p">));</span>
+            <span class="nx">remainder</span> <span class="o">-=</span> <span class="nx">MAX_TIMEOUT</span><span class="p">;</span>
+          <span class="p">}</span>
+        <span class="p">};</span>
+
+      <span class="nx">handler</span><span class="p">();</span>
+
+      <span class="k">return</span> <span class="nx">handle</span><span class="p">;</span>
+    <span class="p">}</span></div></div></div><div class="segment"><div class="comments doc-section doc-section-private"><div class="wrapper"><p><span class='doc-section-header'>Private method removeTimeout</span></p>
+
+<p>A wrapper for clearTimeout, complementing createTimeout above</p>
+
+<p>Parameters:</p>
+
+<ul>
+<li><p><strong>handle must be an Object.</strong></p>
+
+<ul><li><strong>handle.timeout must be a Number.</strong></li></ul></li>
+</ul></div></div><div class="code"><div class="wrapper">    <span class="kd">function</span> <span class="nx">removeTimeout</span> <span class="p">(</span><span class="nx">handle</span><span class="p">)</span> <span class="p">{</span>
+      <span class="k">if</span> <span class="p">(</span><span class="nx">handle</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">clearTimeout</span><span class="p">(</span><span class="nx">handle</span><span class="p">.</span><span class="nx">timeout</span><span class="p">);</span>
+      <span class="p">}</span>
+    <span class="p">}</span></div></div></div><div class="segment"><div class="comments doc-section doc-section-private"><div class="wrapper"><p><span class='doc-section-header'>Private method normalizeDuration</span></p>
 
 <p>Normalizes a duration in one of several forms into a simple number of ms.
 Accepted forms:
@@ -254,7 +299,7 @@ if so, we just need to parse it</p></div></div><div class="code"><div class="wra
 
       <span class="k">this</span><span class="p">.</span><span class="nx">publish</span><span class="p">(</span><span class="s1">&#39;ticked&#39;</span><span class="p">,</span> <span class="k">new</span> <span class="nx">KairosEvent</span><span class="p">(</span><span class="s1">&#39;ticked&#39;</span><span class="p">,</span> <span class="k">this</span><span class="p">));</span>
 
-      <span class="nx">p</span><span class="p">.</span><span class="nx">tickTimeout</span> <span class="o">=</span> <span class="nx">setTimeout</span><span class="p">(</span>
+      <span class="nx">p</span><span class="p">.</span><span class="nx">tickTimeout</span> <span class="o">=</span> <span class="nx">createTimeout</span><span class="p">(</span>
         <span class="nx">_</span><span class="p">.</span><span class="nx">bind</span><span class="p">(</span><span class="nx">tick</span><span class="p">,</span> <span class="k">this</span><span class="p">),</span>
         <span class="nx">getNextTick</span><span class="p">.</span><span class="nx">call</span><span class="p">(</span><span class="k">this</span><span class="p">)</span> <span class="o">-</span> <span class="p">(</span><span class="k">new</span> <span class="nb">Date</span><span class="p">()).</span><span class="nx">getTime</span><span class="p">()</span>
       <span class="p">);</span>
@@ -266,7 +311,7 @@ if so, we just need to parse it</p></div></div><div class="code"><div class="wra
 
       <span class="nx">p</span><span class="p">.</span><span class="nx">isEnded</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
 
-      <span class="nx">clearTimeout</span><span class="p">(</span><span class="nx">p</span><span class="p">.</span><span class="nx">tickTimeout</span><span class="p">);</span>
+      <span class="nx">removeTimeout</span><span class="p">(</span><span class="nx">p</span><span class="p">.</span><span class="nx">tickTimeout</span><span class="p">);</span>
 
       <span class="k">this</span><span class="p">.</span><span class="nx">logger</span><span class="p">.</span><span class="nx">info</span><span class="p">(</span><span class="s1">&#39;Ending KairosTimeFrame&#39;</span><span class="p">,</span> <span class="k">this</span><span class="p">.</span><span class="nx">toJson</span><span class="p">());</span>
       <span class="k">this</span><span class="p">.</span><span class="nx">publish</span><span class="p">(</span><span class="s1">&#39;ended&#39;</span><span class="p">,</span> <span class="k">new</span> <span class="nx">KairosEvent</span><span class="p">(</span><span class="s1">&#39;ended&#39;</span><span class="p">,</span> <span class="k">this</span><span class="p">));</span>
@@ -282,14 +327,14 @@ if so, we just need to parse it</p></div></div><div class="code"><div class="wra
       <span class="k">this</span><span class="p">.</span><span class="nx">publish</span><span class="p">(</span><span class="s1">&#39;began&#39;</span><span class="p">,</span> <span class="k">new</span> <span class="nx">KairosEvent</span><span class="p">(</span><span class="s1">&#39;began&#39;</span><span class="p">,</span> <span class="k">this</span><span class="p">));</span>
 
       <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">getTicksEvery</span><span class="p">())</span> <span class="p">{</span>
-        <span class="nx">p</span><span class="p">.</span><span class="nx">tickTimeout</span> <span class="o">=</span> <span class="nx">setTimeout</span><span class="p">(</span>
+        <span class="nx">p</span><span class="p">.</span><span class="nx">tickTimeout</span> <span class="o">=</span> <span class="nx">createTimeout</span><span class="p">(</span>
           <span class="nx">_</span><span class="p">.</span><span class="nx">bind</span><span class="p">(</span><span class="nx">tick</span><span class="p">,</span> <span class="k">this</span><span class="p">),</span>
           <span class="nx">getNextTick</span><span class="p">.</span><span class="nx">call</span><span class="p">(</span><span class="k">this</span><span class="p">)</span> <span class="o">-</span> <span class="p">(</span><span class="k">new</span> <span class="nb">Date</span><span class="p">()).</span><span class="nx">getTime</span><span class="p">()</span>
         <span class="p">);</span>
       <span class="p">}</span>
 
       <span class="k">if</span> <span class="p">(</span><span class="kc">Infinity</span> <span class="o">!==</span> <span class="k">this</span><span class="p">.</span><span class="nx">getEndsAt</span><span class="p">())</span> <span class="p">{</span>
-        <span class="nx">p</span><span class="p">.</span><span class="nx">endTimeout</span> <span class="o">=</span> <span class="nx">setTimeout</span><span class="p">(</span>
+        <span class="nx">p</span><span class="p">.</span><span class="nx">endTimeout</span> <span class="o">=</span> <span class="nx">createTimeout</span><span class="p">(</span>
           <span class="nx">_</span><span class="p">.</span><span class="nx">bind</span><span class="p">(</span><span class="nx">end</span><span class="p">,</span> <span class="k">this</span><span class="p">),</span>
           <span class="k">this</span><span class="p">.</span><span class="nx">getEndsAt</span><span class="p">()</span> <span class="o">-</span> <span class="p">(</span><span class="k">new</span> <span class="nb">Date</span><span class="p">()).</span><span class="nx">getTime</span><span class="p">()</span>
         <span class="p">);</span>
@@ -393,7 +438,7 @@ A quick note on terminology:
             <span class="nx">begin</span><span class="p">.</span><span class="nx">call</span><span class="p">(</span><span class="k">this</span><span class="p">);</span>
           <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
 
-            <span class="nx">p</span><span class="p">.</span><span class="nx">startTimeout</span> <span class="o">=</span> <span class="nx">setTimeout</span><span class="p">(</span>
+            <span class="nx">p</span><span class="p">.</span><span class="nx">startTimeout</span> <span class="o">=</span> <span class="nx">createTimeout</span><span class="p">(</span>
               <span class="nx">_</span><span class="p">.</span><span class="nx">bind</span><span class="p">(</span><span class="nx">begin</span><span class="p">,</span> <span class="k">this</span><span class="p">),</span>
               <span class="k">this</span><span class="p">.</span><span class="nx">getBeginsAt</span><span class="p">()</span> <span class="o">-</span> <span class="p">(</span><span class="k">new</span> <span class="nb">Date</span><span class="p">()).</span><span class="nx">getTime</span><span class="p">()</span>
             <span class="p">);</span>
@@ -418,9 +463,9 @@ be restarted.</p>
 
           <span class="nx">p</span><span class="p">.</span><span class="nx">isStopped</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
 
-          <span class="nx">clearTimeout</span><span class="p">(</span><span class="nx">p</span><span class="p">.</span><span class="nx">startTimeout</span><span class="p">);</span>
-          <span class="nx">clearTimeout</span><span class="p">(</span><span class="nx">p</span><span class="p">.</span><span class="nx">tickTimeout</span><span class="p">);</span>
-          <span class="nx">clearTimeout</span><span class="p">(</span><span class="nx">p</span><span class="p">.</span><span class="nx">endTimeout</span><span class="p">);</span>
+          <span class="nx">removeTimeout</span><span class="p">(</span><span class="nx">p</span><span class="p">.</span><span class="nx">startTimeout</span><span class="p">);</span>
+          <span class="nx">removeTimeout</span><span class="p">(</span><span class="nx">p</span><span class="p">.</span><span class="nx">tickTimeout</span><span class="p">);</span>
+          <span class="nx">removeTimeout</span><span class="p">(</span><span class="nx">p</span><span class="p">.</span><span class="nx">endTimeout</span><span class="p">);</span>
         <span class="p">}</span>
 
         <span class="k">return</span> <span class="k">this</span><span class="p">;</span>
@@ -440,7 +485,7 @@ this will prevent a spam of ticks.</p>
         <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">p</span><span class="p">.</span><span class="nx">isMuted</span><span class="p">)</span> <span class="p">{</span>
           <span class="nx">p</span><span class="p">.</span><span class="nx">isMuted</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
 
-          <span class="nx">clearTimeout</span><span class="p">(</span><span class="nx">p</span><span class="p">.</span><span class="nx">tickTimeout</span><span class="p">);</span>
+          <span class="nx">removeTimeout</span><span class="p">(</span><span class="nx">p</span><span class="p">.</span><span class="nx">tickTimeout</span><span class="p">);</span>
 
           <span class="k">this</span><span class="p">.</span><span class="nx">publish</span><span class="p">(</span><span class="s1">&#39;muted&#39;</span><span class="p">,</span> <span class="k">new</span> <span class="nx">KairosEvent</span><span class="p">(</span><span class="s1">&#39;muted&#39;</span><span class="p">,</span> <span class="k">this</span><span class="p">));</span>
         <span class="p">}</span>
@@ -462,7 +507,7 @@ this will prevent a spam of ticks.</p>
           <span class="nx">p</span><span class="p">.</span><span class="nx">isMuted</span> <span class="o">=</span> <span class="kc">false</span><span class="p">;</span>
 
           <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">getTicksEvery</span><span class="p">()</span> <span class="o">&amp;&amp;</span> <span class="nx">p</span><span class="p">.</span><span class="nx">isStarted</span> <span class="o">&amp;&amp;</span> <span class="o">!</span><span class="nx">p</span><span class="p">.</span><span class="nx">isStopped</span> <span class="o">&amp;&amp;</span> <span class="nx">p</span><span class="p">.</span><span class="nx">isBegun</span> <span class="o">&amp;&amp;</span> <span class="o">!</span><span class="nx">p</span><span class="p">.</span><span class="nx">isEnded</span><span class="p">)</span> <span class="p">{</span>
-            <span class="nx">p</span><span class="p">.</span><span class="nx">tickTimeout</span> <span class="o">=</span> <span class="nx">setTimeout</span><span class="p">(</span>
+            <span class="nx">p</span><span class="p">.</span><span class="nx">tickTimeout</span> <span class="o">=</span> <span class="nx">createTimeout</span><span class="p">(</span>
               <span class="nx">_</span><span class="p">.</span><span class="nx">bind</span><span class="p">(</span><span class="nx">tick</span><span class="p">,</span> <span class="k">this</span><span class="p">),</span>
               <span class="nx">getNextTick</span><span class="p">.</span><span class="nx">call</span><span class="p">(</span><span class="k">this</span><span class="p">)</span> <span class="o">-</span> <span class="p">(</span><span class="k">new</span> <span class="nb">Date</span><span class="p">()).</span><span class="nx">getTime</span><span class="p">()</span>
             <span class="p">);</span>
