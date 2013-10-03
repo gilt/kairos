@@ -112,7 +112,13 @@ module.exports = (grunt) ->
       else
         done(false)
 
+  grunt.registerTask 'coveralls', 'Coveralls', ->
+    done = this.async()
+    require('child_process').exec './node_modules/grunt-karma/node_modules/karma/node_modules/.bin/istanbul report --lcovonly && cat ./coverage/lcov.info | ./node_modules/.bin/coveralls', (err, stdout, stderr) ->
+      console.log err if err?
+      done !err?
+
   grunt.registerTask 'default', ['karma:specs']
   grunt.registerTask 'build', ['test', 'clean:build', 'doc', 'concat', 'replace', 'uglify']
-  grunt.registerTask 'test', ['jshint', 'karma:amd', 'karma:once']
-  grunt.registerTask 'test_travis', ['jshint', 'karma:amd_travis', 'karma:once_travis']
+  grunt.registerTask 'test', ['jshint', 'karma:amd', 'karma:once', 'coveralls']
+  grunt.registerTask 'test_travis', ['jshint', 'karma:amd_travis', 'karma:once_travis', 'coveralls']

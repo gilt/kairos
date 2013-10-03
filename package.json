@@ -38,7 +38,8 @@
     "grunt-karma": "0.3.x",
     "grunt-release": "0.2.x",
     "grunt-replace": "0.4.x",
-    "groc": "https://github.com/gilt/groc/archive/v0.5.5.tar.gz"
+    "groc": "https://github.com/gilt/groc/archive/v0.5.5.tar.gz",
+    "coveralls": "2.3.x"
   },
   "engine": {
     "node": ">=0.8.0"

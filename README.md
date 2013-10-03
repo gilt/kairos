@@ -1,4 +1,4 @@
-# Kairos [![Build Status](https://api.travis-ci.org/gilt/kairos.png?branch=master)](https://travis-ci.org/gilt/kairos)
+# Kairos [![Build Status](https://api.travis-ci.org/gilt/kairos.png?branch=master)](https://travis-ci.org/gilt/kairos)[![Coverage Status](https://coveralls.io/repos/gilt/kairos/badge.png)](https://coveralls.io/r/gilt/kairos)
 
 Kairos is a time frame scheduler.
 
