@@ -154,16 +154,8 @@ describe('KairosTimeFrame', function () {
       expect(timeFrame.getBeginsAt({ originalValue: true })).toBe('1000');
     });
 
-    it('should not expose a setter for the beginsAt parameter', function () {
-      expect(timeFrame.beginsAt).toBeUndefined();
-    });
-
-    xit('should throw an error if you call the beginsAt setter with no value', function () {
-      expect(timeFrame.beginsAt).toThrow();
-    });
-
-    xit('should make the beginsAt setter chainable', function () {
-      expect(timeFrame.beginsAt(1500)).toBe(timeFrame);
+    it('should expose a setter for the beginsAt parameter', function () {
+      expect(timeFrame.setBeginsAt).toEqual(jasmine.any(Function));
     });
 
     it('should expose a getter for the (normalized) endsAt parameter', function () {
@@ -316,6 +308,43 @@ describe('KairosTimeFrame', function () {
 
     it('should make namedTimes immutable once start has been called', function () {
       expect(timeFrame.getNamedTimes()).not.toEqual({ foo: 7000 });
+    });
+  });
+
+  describe('Accessor for beginsAt', function () {
+    var
+      timeFrame,
+      hasBegun = false;
+
+    timeFrame = new KairosTimeFrame('test', {
+      beginsAt: (new Date()).getTime() + 2000,
+      endsAt: (new Date()).getTime() + 5000
+    });
+
+    it('should throw an error if you call it with no value', function () {
+      expect(timeFrame.setBeginsAt).toThrow();
+    });
+
+    it('should allow setting before the frame starts', function () {
+      var newTime = (new Date()).getTime() + 500;
+      timeFrame.setBeginsAt(newTime);
+      expect(timeFrame.getBeginsAt()).toEqual(newTime);
+    });
+
+    it('should disallow setting after the frame starts', function () {
+      timeFrame.subscribe('began', function () {
+        hasBegun = true;
+      });
+
+      timeFrame.start();
+
+      waitsFor(function () {
+        return hasBegun;
+      });
+
+      runs(function () {
+        expect(function () { timeFrame.setBeginsAt((new Date()).getTime()); }).toThrow();
+      });
     });
   });
 
