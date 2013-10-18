@@ -92,7 +92,7 @@ all browsers.</p></div></div><div class="code"><div class="wrapper">    <span cl
 
       <span class="nx">NATURAL_LANGUAGE_DURATION_PARSER</span> <span class="o">=</span> <span class="sr">/(\d+(?:[\\.,]\\d+)?)\s*(y(?:ear)?s?)?(mon(?:th)?s?)?(d(?:ay)?s?)?(h(?:our)?s?)?(min(?:ute)?s?)?(s(?:econd)?s)?(m(?:illi)?s(?:econds?)?)?/gi</span><span class="p">,</span>
 
-      <span class="nx">MAX_TIMEOUT</span> <span class="o">=</span> <span class="nb">Math</span><span class="p">.</span><span class="nx">pow</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">32</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">;</span></div></div></div><div class="segment"><div class="comments doc-section doc-section-private"><div class="wrapper"><p><span class='doc-section-header'>Private method createTimeout</span></p>
+      <span class="nx">MAX_TIMEOUT</span> <span class="o">=</span> <span class="mi">2147483647</span><span class="p">;</span></div></div></div><div class="segment"><div class="comments doc-section doc-section-private"><div class="wrapper"><p><span class='doc-section-header'>Private method createTimeout</span></p>
 
 <p>A wrapper for setTimeout, to workaround an issue with setting a timeout for more than ~20 days</p>
 
@@ -721,6 +721,25 @@ myTimeFrame.getBeginsAt({ originalValue: true }) // 'PT1H after noon'
           <span class="p">});</span>
 
           <span class="k">return</span> <span class="nx">normalizeMoment</span><span class="p">(</span><span class="nx">p</span><span class="p">.</span><span class="nx">beginsAt</span><span class="p">,</span> <span class="nx">tmp</span><span class="p">);</span>
+        <span class="p">}</span>
+      <span class="p">},</span></div></div></div><div class="segment"><div class="comments doc-section doc-section-public"><div class="wrapper"><p><span class='doc-section-header'>Public method setBeginsAt</span></p>
+
+<p>Allows setting, which is necessary in cases where overlapping frames
+need to be prevented. Only allowed before the frame starts.</p>
+
+<p>Parameters:</p>
+
+<ul>
+<li><strong>value must be an Any.</strong><br/>(The value to set the new begins at time.)</li>
+</ul>
+
+<p><strong>Can throw an ImmutableError</strong><br/><strong>and</strong> <strong>Can throw a MissingParameter</strong></p></div></div><div class="code"><div class="wrapper">      <span class="nx">setBeginsAt</span><span class="o">:</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">value</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">isStarted</span><span class="p">())</span> <span class="p">{</span>
+          <span class="k">throw</span> <span class="k">new</span> <span class="nx">errors</span><span class="p">.</span><span class="nx">ImmutableError</span><span class="p">();</span>
+        <span class="p">}</span> <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="nx">_</span><span class="p">.</span><span class="nx">isUndefined</span><span class="p">(</span><span class="nx">value</span><span class="p">))</span> <span class="p">{</span>
+          <span class="k">throw</span> <span class="k">new</span> <span class="nx">errors</span><span class="p">.</span><span class="nx">MissingParameter</span><span class="p">();</span>
+        <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+          <span class="k">this</span><span class="p">.</span><span class="nx">_private</span><span class="p">(</span><span class="nx">privateKey</span><span class="p">).</span><span class="nx">beginsAt</span> <span class="o">=</span> <span class="nx">normalizeMoment</span><span class="p">(</span><span class="nx">value</span><span class="p">,</span> <span class="k">this</span><span class="p">.</span><span class="nx">getNamedTimes</span><span class="p">());</span>
         <span class="p">}</span>
       <span class="p">},</span></div></div></div><div class="segment"><div class="comments doc-section doc-section-public"><div class="wrapper"><p><span class='doc-section-header'>Public method getEndsAt</span></p>
 

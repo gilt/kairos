@@ -13,7 +13,7 @@ f.event={add:function(a,c,d,e,g){var h,i,j,k,l,m,n,o,p,q,r,s;if(!(a.nodeType===3
           "commentsOnly": true,
           "name": "Markdown"
         },
-        "sourcePath": "/web/kairos/README.md",
+        "sourcePath": "/Users/eshepherd/Sites/opensource/kairos/README.md",
         "projectPath": "README.md",
         "targetPath": "index",
         "title": "index"
@@ -218,7 +218,7 @@ f.event={add:function(a,c,d,e,g){var h,i,j,k,l,m,n,o,p,q,r,s;if(!(a.nodeType===3
           "ignorePrefix": "}",
           "name": "JavaScript"
         },
-        "sourcePath": "/web/kairos/lib/kairos.js",
+        "sourcePath": "/Users/eshepherd/Sites/opensource/kairos/lib/kairos.js",
         "projectPath": "lib/kairos.js",
         "targetPath": "kairos",
         "title": "kairos"
@@ -236,7 +236,7 @@ f.event={add:function(a,c,d,e,g){var h,i,j,k,l,m,n,o,p,q,r,s;if(!(a.nodeType===3
           "ignorePrefix": "}",
           "name": "JavaScript"
         },
-        "sourcePath": "/web/kairos/lib/kairos_collection.js",
+        "sourcePath": "/Users/eshepherd/Sites/opensource/kairos/lib/kairos_collection.js",
         "projectPath": "lib/kairos_collection.js",
         "targetPath": "kairos_collection",
         "title": "kairos_collection"
@@ -254,7 +254,7 @@ f.event={add:function(a,c,d,e,g){var h,i,j,k,l,m,n,o,p,q,r,s;if(!(a.nodeType===3
           "ignorePrefix": "}",
           "name": "JavaScript"
         },
-        "sourcePath": "/web/kairos/lib/kairos_errors.js",
+        "sourcePath": "/Users/eshepherd/Sites/opensource/kairos/lib/kairos_errors.js",
         "projectPath": "lib/kairos_errors.js",
         "targetPath": "kairos_errors",
         "title": "kairos_errors"
@@ -272,7 +272,7 @@ f.event={add:function(a,c,d,e,g){var h,i,j,k,l,m,n,o,p,q,r,s;if(!(a.nodeType===3
           "ignorePrefix": "}",
           "name": "JavaScript"
         },
-        "sourcePath": "/web/kairos/lib/kairos_event.js",
+        "sourcePath": "/Users/eshepherd/Sites/opensource/kairos/lib/kairos_event.js",
         "projectPath": "lib/kairos_event.js",
         "targetPath": "kairos_event",
         "title": "kairos_event"
@@ -290,7 +290,7 @@ f.event={add:function(a,c,d,e,g){var h,i,j,k,l,m,n,o,p,q,r,s;if(!(a.nodeType===3
           "ignorePrefix": "}",
           "name": "JavaScript"
         },
-        "sourcePath": "/web/kairos/lib/kairos_time_frame.js",
+        "sourcePath": "/Users/eshepherd/Sites/opensource/kairos/lib/kairos_time_frame.js",
         "projectPath": "lib/kairos_time_frame.js",
         "targetPath": "kairos_time_frame",
         "title": "kairos_time_frame"

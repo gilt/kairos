@@ -1,4 +1,4 @@
-/*! kairos v0.4.1 2013-09-10 */
+/*! kairos v0.5.0 2013-10-18 */
 /*global _: false, define: false, exports: false */
 (function (exports) {
 
@@ -195,7 +195,7 @@
 
       NATURAL_LANGUAGE_DURATION_PARSER = /(\d+(?:[\\.,]\\d+)?)\s*(y(?:ear)?s?)?(mon(?:th)?s?)?(d(?:ay)?s?)?(h(?:our)?s?)?(min(?:ute)?s?)?(s(?:econd)?s)?(m(?:illi)?s(?:econds?)?)?/gi,
 
-      MAX_TIMEOUT = Math.pow(2, 32) - 1;
+      MAX_TIMEOUT = 2147483647;
 
     /**
      * A wrapper for setTimeout, to workaround an issue with setting a timeout for more than ~20 days
@@ -1039,6 +1039,28 @@
       },
 
       /**
+       * Allows setting, which is necessary in cases where overlapping frames
+       * need to be prevented. Only allowed before the frame starts.
+       *
+       * @method setBeginsAt
+       * @public
+       *
+       * @param  {Any}  value  The value to set the new begins at time.
+       *
+       * @throws {ImmutableError}
+       * @throws {MissingParameter}
+       */
+      setBeginsAt: function (value) {
+        if (this.isStarted()) {
+          throw new errors.ImmutableError();
+        } else if (_.isUndefined(value)) {
+          throw new errors.MissingParameter();
+        } else {
+          this._private(privateKey).beginsAt = normalizeMoment(value, this.getNamedTimes());
+        }
+      },
+
+      /**
        * Gets the millisecond value (or the original value) of the 'endsAt'
        * property.
        *
@@ -1259,12 +1281,12 @@
         }
       },
 
-      version: '0.4.1'
+      version: '0.5.0'
     });
 
     KairosTimeFrame.prototype.toJson = KairosTimeFrame.prototype.toJSON;
 
-    KairosTimeFrame.version = '0.4.1';
+    KairosTimeFrame.version = '0.5.0';
 
     return KairosTimeFrame;
   }
@@ -1698,12 +1720,12 @@
         }
       },
 
-      version: '0.4.1'
+      version: '0.5.0'
     });
 
     KairosCollection.prototype.toJson = KairosCollection.prototype.toJSON;
 
-    KairosCollection.version = '0.4.1';
+    KairosCollection.version = '0.5.0';
 
     return KairosCollection;
   }
