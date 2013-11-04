@@ -30,6 +30,7 @@
   "main": "lib/kairos.js",
   "devDependencies": {
     "grunt": "0.4.x",
+    "grunt-complexity": "0.1.x",
     "grunt-contrib-clean": "0.4.x",
     "grunt-contrib-concat": "0.1.x",
     "grunt-contrib-jasmine": "0.3.x",

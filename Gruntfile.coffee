@@ -48,6 +48,14 @@ module.exports = (grunt) ->
         browsers: [
           'PhantomJS'
         ]
+    complexity:
+      generic:
+        src: ['<%= meta.src %>']
+        options:
+          errorsOnly: false
+          cyclomatic: 10
+          halstead: 20
+          maintainability: 65
     clean:
       build: ['dist', 'coverage', 'test-results.xml', 'doc']
     concat:
@@ -91,6 +99,7 @@ module.exports = (grunt) ->
         pushTags: false, # also push the new tag out to github.
         npm:      false  # publish the new version to npm.
 
+  grunt.loadNpmTasks 'grunt-complexity'
   grunt.loadNpmTasks 'grunt-contrib-clean'
   grunt.loadNpmTasks 'grunt-contrib-concat'
   grunt.loadNpmTasks 'grunt-contrib-jasmine'
@@ -120,5 +129,5 @@ module.exports = (grunt) ->
 
   grunt.registerTask 'default', ['karma:specs']
   grunt.registerTask 'build', ['test', 'clean:build', 'doc', 'concat', 'replace', 'uglify']
-  grunt.registerTask 'test', ['jshint', 'karma:amd', 'karma:once', 'coveralls']
+  grunt.registerTask 'test', ['jshint', 'karma:amd', 'karma:once', 'coveralls', 'complexity']
   grunt.registerTask 'test_travis', ['jshint', 'karma:amd_travis', 'karma:once_travis', 'coveralls']
