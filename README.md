@@ -458,6 +458,28 @@ unavoidable setTimeout variation; and the syncsTo option gives you the ability
 to coordinate the first tick, and thus the subsequent ticks, with the user's
 clock.
 
+### Adjustment
+
+Sometimes there might be significant differences between a user's clock and that
+of the server, and you want to use the server clock instead of the user's clock.
+
+To accomplish this, simply calculate the difference between the user's clock and
+your own (see below) and pass this value to `KairosTimeFrame.setClockAdjustment`
+
+This adjustment value should be positive if the user's clock is in the future
+relative to some authority, and negative if it is in the past.
+
+If provided this adjustment value, Kairos will adjust it's clock internally.
+
+A recommended way to calculate the adjustment value is, in a script tag in the
+head, subtract a server generated timestamp from the Performance Timing API
+responseStart value (or in browsers (Safari) that don't support it, use
+`Date.now()` or even `(new Date()).getTime()`
+
+```javascript
+clockAdjustment = (window.performance ? window.performance.timing.responseStart : (new Date()).getTime()) - __INSERT_SERVER_GENERATED_TIMESTAMP__;
+```
+
 ### Data
 
 Frames can include a data object which will be passed to all of the published

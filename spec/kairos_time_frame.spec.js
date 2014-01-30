@@ -1149,4 +1149,36 @@ describe('KairosTimeFrame', function () {
       expect(typeof timeFrame.toString()).toBe('string');
     });
   });
+
+  describe('Now', function () {
+    it('should return a number', function () {
+      expect(KairosTimeFrame.now()).toEqual(jasmine.any(Number));
+    });
+
+    it('should return a number of milliseconds', function () {
+      expect(KairosTimeFrame.now()).toBeGreaterThan(1000000000000);
+    });
+
+    it('should return the current timestamp (by default)', function () {
+      var
+        expected = (new Date()).getTime(),
+        actual = KairosTimeFrame.now();
+
+      expect(actual).toBeGreaterThan(expected - 5);
+      expect(actual).toBeLessThan(expected + 5);
+    });
+
+    it('should use the clock adjustment', function () {
+      KairosTimeFrame.setClockAdjustment(60 * 60 * 1000); // 1 hour
+
+      var
+        expected = (new Date()).getTime(),
+        actual = KairosTimeFrame.now();
+
+      KairosTimeFrame.setClockAdjustment(0); // reset
+
+      expect(actual).toBeGreaterThan(expected - 5 - 60 * 60 * 1000);
+      expect(actual).toBeLessThan(expected + 5 - 60 * 60 * 1000);
+    });
+  });
 });

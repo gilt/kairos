@@ -58,6 +58,7 @@ module.exports = (grunt) ->
           maintainability: 65
     clean:
       build: ['dist', 'coverage', 'test-results.xml', 'doc']
+      test: ['coverage']
     concat:
       options:
         separator: '\n\n'
@@ -129,5 +130,5 @@ module.exports = (grunt) ->
 
   grunt.registerTask 'default', ['karma:specs']
   grunt.registerTask 'build', ['test', 'clean:build', 'doc', 'concat', 'replace', 'uglify']
-  grunt.registerTask 'test', ['jshint', 'karma:amd', 'karma:once', 'coveralls', 'complexity']
+  grunt.registerTask 'test', ['jshint', 'clean:test', 'karma:amd', 'karma:once', 'coveralls', 'complexity']
   grunt.registerTask 'test_travis', ['jshint', 'karma:amd_travis', 'karma:once_travis', 'coveralls']
