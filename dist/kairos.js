@@ -1,4 +1,4 @@
-/*! kairos v0.5.0 2013-10-18 */
+/*! kairos v0.5.2 2014-01-30 */
 /*global _: false, define: false, exports: false */
 (function (exports) {
 
@@ -195,7 +195,37 @@
 
       NATURAL_LANGUAGE_DURATION_PARSER = /(\d+(?:[\\.,]\\d+)?)\s*(y(?:ear)?s?)?(mon(?:th)?s?)?(d(?:ay)?s?)?(h(?:our)?s?)?(min(?:ute)?s?)?(s(?:econd)?s)?(m(?:illi)?s(?:econds?)?)?/gi,
 
-      MAX_TIMEOUT = 2147483647;
+      MAX_TIMEOUT = 2147483647,
+
+      clockAdjustment = 0;
+
+    /**
+     * Sets the (UTC) difference (in milliseconds) between the clock on the
+     * users's computer, and that of some authoritative clock, generally that of
+     * the server that hosts the page that the user is visiting.
+     *
+     * @public
+     * @setter
+     * @method setClockAdjustment
+     *
+     * @param  {Number} val  Clock adjustment, in milliseconds. A positive value means that the users clock is in the future, negative means past.
+     */
+    function setClockAdjustment (val) {
+      clockAdjustment = val;
+    }
+
+    /**
+     * Returns the current timestamp, adjusted for differences between the user
+     * and the server clock.
+     *
+     * @public
+     * @method now
+     *
+     * @return {Number}
+     */
+    function now () {
+      return (new Date()).getTime() - clockAdjustment;
+    }
 
     /**
      * A wrapper for setTimeout, to workaround an issue with setting a timeout for more than ~20 days
@@ -282,7 +312,7 @@
 
         if (parts) {
           // Drop the 'all' portion of the match, leaving only individual values
-          parts = parts.splice(1);
+          parts = parts.slice(1);
         } else {
 
           // We weren't able to parse it as an ISO-8601 Duration, so...
@@ -487,15 +517,15 @@
      */
     function getNextTick () {
       var
-        now = (new Date()).getTime(),
+        naow = now(),
         interval = this.getTicksEvery(),
         sync = this.getSyncsTo();
 
-      return now +
+      return naow +
         interval -
         (
           sync ?
-            (now + interval) % sync
+            (naow + interval) % sync
             : 0
           );
     }
@@ -516,7 +546,7 @@
 
       p.tickTimeout = createTimeout(
         _.bind(tick, this),
-        getNextTick.call(this) - (new Date()).getTime()
+        getNextTick.call(this) - now()
       );
     }
 
@@ -560,14 +590,14 @@
       if (this.getTicksEvery()) {
         p.tickTimeout = createTimeout(
           _.bind(tick, this),
-          getNextTick.call(this) - (new Date()).getTime()
+          getNextTick.call(this) - now()
         );
       }
 
       if (Infinity !== this.getEndsAt()) {
         p.endTimeout = createTimeout(
           _.bind(end, this),
-          this.getEndsAt() - (new Date()).getTime()
+          this.getEndsAt() - now()
         );
       }
     }
@@ -619,7 +649,7 @@
 
       _.defaults(privateData.namedTimes, {
         epoch: 0,
-        now: (new Date()).getTime(),
+        now: now(),
         never: Infinity
       });
 
@@ -667,21 +697,21 @@
         if (!this.isStarted() && !this.isStopped()) {
           var
             p = this._private(privateKey),
-            now = (new Date()).getTime();
+            naow = now();
 
           freeze.call(this);
 
           p.isStarted = true;
 
-          if (this.getEndsAt() <= now) {
+          if (this.getEndsAt() <= naow) {
             p.isEnded = true;
-          } else if (this.getBeginsAt() <= now) {
+          } else if (this.getBeginsAt() <= naow) {
             begin.call(this);
           } else {
 
             p.startTimeout = createTimeout(
               _.bind(begin, this),
-              this.getBeginsAt() - (new Date()).getTime()
+              this.getBeginsAt() - now()
             );
           }
         }
@@ -767,7 +797,7 @@
           if (this.getTicksEvery() && p.isStarted && !p.isStopped && p.isBegun && !p.isEnded) {
             p.tickTimeout = createTimeout(
               _.bind(tick, this),
-              getNextTick.call(this) - (new Date()).getTime()
+              getNextTick.call(this) - now()
             );
           }
 
@@ -1277,16 +1307,20 @@
           throw new errors.MissingParameter();
         } else {
           var origin = this._private(privateKey).namedTimes[time];
-          return origin - (new Date()).getTime();
+          return origin - now();
         }
       },
 
-      version: '0.5.0'
+      version: '0.5.2'
     });
 
     KairosTimeFrame.prototype.toJson = KairosTimeFrame.prototype.toJSON;
 
-    KairosTimeFrame.version = '0.5.0';
+    KairosTimeFrame.setClockAdjustment = setClockAdjustment;
+
+    KairosTimeFrame.now = now;
+
+    KairosTimeFrame.version = '0.5.2';
 
     return KairosTimeFrame;
   }
@@ -1720,12 +1754,12 @@
         }
       },
 
-      version: '0.5.0'
+      version: '0.5.2'
     });
 
     KairosCollection.prototype.toJson = KairosCollection.prototype.toJSON;
 
-    KairosCollection.version = '0.5.0';
+    KairosCollection.version = '0.5.2';
 
     return KairosCollection;
   }
